@@ -60,15 +60,18 @@ class Gfycat:
         return r.json()
 
 
-    def upload(self, filestream, type):
+    def upload(self, filestream, type, nsfw=False):
         # If we hit a problem, restart this segment
         tries = 3
         while tries:
             # get gfyname
             url = "https://api.gfycat.com/v1/gfycats"
             headers = {"Authorization": "Bearer " + self.get_token(), "Content-Type": "application/json"}
+            params = {}
+            if nsfw:
+                params["nsfw"] = 1
             print("getting gfyname...")
-            r = requests.post(url, headers=headers)
+            r = requests.post(url, headers=headers, data=params)
             metadata = r.json()
 
 
@@ -114,6 +117,6 @@ class Gfycat:
             break
 
         if tries:
-            return Gif(consts.GFYCAT, image_id)
+            return Gif(consts.GFYCAT, image_id, nsfw=nsfw)
         else:
             return None

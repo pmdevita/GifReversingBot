@@ -19,8 +19,10 @@ imgur = ImgurClientSingleton.get()
 gfycat = GfycatSingleton.get()
 
 class GifHost:
-    def __init__(self, url):
-        self.url = url
+    type = None
+
+    def __init__(self, context):
+        self.context = context
 
     def reverse(self):
         raise NotImplemented
@@ -33,33 +35,39 @@ class GifHost:
 
     def get_gif(self):
         """Return info about the gif for checking the db"""
-        raise NotImplemented
+        if self.id:
+            return Gif(self.type, self.id, nsfw=self.context.nsfw)
+        else:
+            return None
 
     @classmethod
-    def open(cls, url):
+    def open(cls, context):
+        url = context.url
         # Imgur
         if REPatterns.imgur.findall(url):
-            return ImgurGif(url)
+            return ImgurGif(context)
         # Gfycat
         if REPatterns.gfycat.findall(url):
-            return GfycatGif(url)
+            return GfycatGif(context)
         # Reddit Gif
         if REPatterns.reddit_gif.findall(url):
-            return RedditGif(url)
+            return RedditGif(context)
         # Reddit Vid
         if REPatterns.reddit_vid.findall(url):
-            return RedditVid(url)
+            return RedditVid(context)
 
         print("Unknown URL Type", url)
         return None
 
 
 class ImgurGif(GifHost):
-    def __init__(self, url):
-        super(ImgurGif, self).__init__(url)
+    type = consts.IMGUR
+
+    def __init__(self, context):
+        super(ImgurGif, self).__init__(context)
         self.uploader = consts.IMGUR
         # Retrieve the ID
-        imgur_match = REPatterns.imgur.findall(url)[0]
+        imgur_match = REPatterns.imgur.findall(self.context.url)[0]
         if imgur_match[2]: # Image match
             self.id = imgur_match[2]
         elif imgur_match[1]: # Gallery match
@@ -101,24 +109,21 @@ class ImgurGif(GifHost):
             return consts.GIF
 
     def upload_video(self, video):
-        return core.hosts.imgur.imgurupload(video, consts.VIDEO)
+        return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
 
 
     def upload_gif(self, gif):
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(gif, consts.GIF)
+            return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(gif, consts.GIF)
-
-    def get_gif(self):
-        if self.id:
-            return Gif(consts.IMGUR, self.id)
-        else:
-            return None
+            return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
 
 class GfycatGif(GifHost):
-    def __init__(self, url):
-        self.id = REPatterns.gfycat.findall(url)[0]
+    type = consts.GFYCAT
+
+    def __init__(self, context):
+        super(GfycatGif, self).__init__(context)
+        self.id = REPatterns.gfycat.findall(context.url)[0]
         self.pic = gfycat.get_gfycat(self.id)
         self.url = self.pic["gfyItem"]["mp4Url"]
 
@@ -126,15 +131,14 @@ class GfycatGif(GifHost):
         return consts.VIDEO
 
     def upload_video(self, video):
-        return gfycat.upload(video, consts.VIDEO)
-
-    def get_gif(self):
-        return Gif(consts.GFYCAT, self.id)
+        return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
 
 class RedditGif(GifHost):
-    def __init__(self, url):
-        super(RedditGif, self).__init__(url)
-        self.id = REPatterns.reddit_gif.findall(url)[0]
+    type = consts.REDDITGIF
+
+    def __init__(self, context):
+        super(RedditGif, self).__init__(context)
+        self.id = REPatterns.reddit_gif.findall(context.url)[0]
 
     def analyze(self):
         # print(self.url)
@@ -144,17 +148,17 @@ class RedditGif(GifHost):
     def upload_gif(self, gif):
         return core.hosts.imgur.imgurupload(gif, consts.GIF)
 
-    def get_gif(self):
-        return Gif(consts.REDDITGIF, self.id)
-
 class RedditVid(GifHost):
-    def __init__(self, url):
-        super(RedditVid, self).__init__(url)
+    type = consts.REDDITVIDEO
+
+    def __init__(self, context):
+        super(RedditVid, self).__init__(context)
         self.uploader = consts.IMGUR
-        self.id = REPatterns.reddit_vid.findall(self.url)[0]
+        self.id = REPatterns.reddit_vid.findall(self.context.url)[0]
+        # TODO: Apparently praw has this data, rewrite to use that
         headers = {"User-Agent": consts.spoof_user_agent}
         # Follow redirect to post URL
-        r = requests.get(url, headers=headers)
+        r = requests.get(self.context.url, headers=headers)
         # Grab JSON of post
         r = requests.get(r.url + ".json", headers=headers)
         data = r.json()
@@ -184,21 +188,15 @@ class RedditVid(GifHost):
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(video, consts.VIDEO)
+            return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(video, consts.VIDEO)
+            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
 
     def upload_gif(self, gif):
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(gif, consts.GIF)
+            return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(gif, consts.GIF)
-
-    def get_gif(self):
-        if self.url:
-            return Gif(consts.REDDITVIDEO, self.id)
-        else:
-            return None
+            return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
 
 class LinkGif(GifHost):
     pass

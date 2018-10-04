@@ -2,9 +2,13 @@ import praw.exceptions
 import prawcore.exceptions
 from core import constants as consts
 
-def reply(comment, url):
+def reply(comment, context):
+    url = context.url
     try:
-        comment.reply(consts.reply_template.format(url))
+        if not context.nsfw:
+            comment.reply(consts.reply_template.format(url))
+        else:
+            comment.reply(consts.nsfw_reply_template.format(url))
     except praw.exceptions.APIException as err:
         error = vars(err)
         if err.error_type == "RATELIMIT":

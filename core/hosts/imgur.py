@@ -11,7 +11,7 @@ from requests_toolbelt import MultipartEncoder
 
 from core import constants as consts
 from core.gif import Gif
-from keys import imgurpath
+# from keys import imgurpath
 from core.credentials import CredentialsLoader
 
 # Bad solution but I don't want to touch this. Rewrite the client
@@ -39,8 +39,7 @@ class ImgurClient(pImgurClient):
         imcred = self.loadimgur()
         if imcred == None:
             print("Imgur Auth URL: ", self.get_auth_url('pin'))
-            null = input()
-            pin = input()
+            pin = input("Paste the pin here:")
             credentials = self.authorize(pin, 'pin')
             self.saveimgur((credentials['access_token'], credentials['refresh_token']))
             self.set_user_auth(credentials['access_token'], credentials['refresh_token'])
@@ -51,6 +50,7 @@ class ImgurClient(pImgurClient):
         # self.credits = self.get_credits()
 
     def loadimgur(self):
+        imgurpath = CredentialsLoader.get_credentials()['imgur']['imgur_path']
         try:
             with open(imgurpath, 'r') as f:
                 data = json.load(f)
@@ -62,6 +62,7 @@ class ImgurClient(pImgurClient):
             return None
 
     def saveimgur(self, data):
+        imgurpath = CredentialsLoader.get_credentials()['imgur']['imgur_path']
         with open(imgurpath, 'w') as f:
             json.dump(data, f)
 
@@ -89,7 +90,7 @@ class AuthWrapper(pAuthWrapper):
             json.dump((response_data['access_token'], self.refresh_token), f)
 
 
-def imgurupload(file, type, delete=True):
+def imgurupload(file, type, nsfw=False):
     """
     :param file: filestream to upload
     :param name: string name of filestream
@@ -148,7 +149,7 @@ def imgurupload(file, type, delete=True):
             image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
                                     "doesn't work, please report an issue. Thanks!"
             # input()
-            gif = Gif(consts.IMGUR, image_id, url=image_url, log=False)
+            gif = Gif(consts.IMGUR, image_id, url=image_url, log=False, nsfw=nsfw)
 
         elif type == consts.VIDEO:
             # watch ticket to get link
@@ -185,6 +186,6 @@ def imgurupload(file, type, delete=True):
 
             # TODO: once gif uploading is fixed, unindent this
             image_url = "https://imgur.com/{}.gifv".format(image_id)
-            gif = Gif(consts.IMGUR, image_id, url=image_url)
+            gif = Gif(consts.IMGUR, image_id, url=image_url, nsfw=nsfw)
         print("Done!")
         return gif

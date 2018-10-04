@@ -3,12 +3,15 @@ from core import parse
 from core import constants as consts
 from core.regex import REPatterns
 
+from pprint import pprint
+
 REREVERSE = 1
 
 class CommentContext:
     def __init__(self, comment):
         self.comment = comment
         self.rereverse = False
+        self.nsfw = is_nsfw(comment)
         self.context = self._determine_target_url(self.comment)
 
     def _determine_target_url(self, reddit_object):
@@ -46,3 +49,14 @@ class CommentContext:
                     return reddit_object
             # We didn't find a gif, go up a level
             return self._determine_target_url(reddit_object.parent())
+
+
+# Works but might mark a sfw gif posted in a nsfw sub as nsfw ¯\_(ツ)_/¯
+def is_nsfw(comment):
+    # Identify if submission is nsfw
+    post_nsfw = comment.submission.over_18
+
+    # Why no underscore
+    sub_nsfw = comment.subreddit.over18
+
+    return post_nsfw or sub_nsfw

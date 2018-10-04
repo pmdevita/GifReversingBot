@@ -1,7 +1,9 @@
 import requests
 from io import BytesIO
 
-from core.context import CommentContext
+from pprint import pprint
+
+from core.context import CommentContext, is_nsfw
 from core.reply import reply
 from core.gif_host import GifHost
 from core.reverse import reverse_mp4, reverse_gif
@@ -9,9 +11,8 @@ from core.history import check_database, add_to_database
 from core import constants as consts
 
 
-def process_comment(comment):
+def process_comment(reddit, comment):
     print("New request by " + comment.author.name)
-    #print(comment)
 
     # Create the comment context object
     context = CommentContext(comment)
@@ -20,27 +21,28 @@ def process_comment(comment):
         return
 
     if context.rereverse:           # Is the user asking to rereverse?
-        reply(comment, context.url)
+        reply(comment, context)
         return
 
     # Create object to grab gif from host
     print(context.url)
-    gif_host = GifHost.open(context.url)
+    gif_host = GifHost.open(context)
 
     # If the link was not recognized, return
     if not gif_host:
         return
 
     # If the gif was unable to be acquired, return
-    if not gif_host.get_gif():
+    original_gif = gif_host.get_gif()
+    if not original_gif:
         return
 
     # Check database for gif before we reverse it
-    gif = check_database(gif_host.get_gif())
+    gif = check_database(original_gif)
 
     # If it was in the database, reuse it
     if gif:
-        reply(comment, gif.url)
+        reply(comment, gif)
         return
 
     # Analyze how the gif should be reversed
@@ -74,4 +76,4 @@ def process_comment(comment):
             add_to_database(gif_host.get_gif(), reversed_gif)
         # Reply
         print("Replying!", reversed_gif.url)
-        reply(comment, reversed_gif.url)
+        reply(comment, reversed_gif)

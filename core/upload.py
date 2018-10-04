@@ -8,7 +8,7 @@ from urllib.request import urlopen
 import requests
 
 from core.hosts.imgur import imgurupload
-from keys import www, domainlocation, domain
+# from keys import www, domainlocation, domain
 # from core.file import resetfile, getduration
 from core import constants as consts
 

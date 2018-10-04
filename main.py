@@ -23,12 +23,12 @@ while True:
         for message in reddit.inbox.unread():
             if message.was_comment:
                 if message.subject == "username mention":
-                    process_comment(reddit.comment(message.id))
+                    process_comment(reddit, reddit.comment(message.id))
                 elif message.subject == "comment reply" and REPatterns.reply_mention.findall(message.body):
-                    process_comment(reddit.comment(message.id))
+                    process_comment(reddit, reddit.comment(message.id))
             else:  # was a message
-                if message.first_message == "None":
-                    message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
+                # if message.first_message == "None":
+                #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
                 reddit.redditor("pmdevita").message("Someone messaged me!",
                                                     "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
 
