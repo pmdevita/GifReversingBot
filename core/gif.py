@@ -13,7 +13,7 @@ class Gif:
         if url:
             self.url = url
         elif host == consts.IMGUR:
-            self.url = "https://imgur.com/{}".format(id)
+            self.url = "https://imgur.com/{}.gifv".format(id)
         elif host == consts.GFYCAT:
             self.url = "https://gfycat.com/{}".format(id)
         elif host == consts.REDDITGIF:

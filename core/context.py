@@ -5,10 +5,10 @@ from core.regex import REPatterns
 
 from pprint import pprint
 
-REREVERSE = 1
 
 class CommentContext:
     def __init__(self, comment):
+        """Determine the context of a summon by grabbing what comment/submission and url it is referring too"""
         self.comment = comment
         self.rereverse = False
         self.nsfw = is_nsfw(comment)
@@ -20,43 +20,56 @@ class CommentContext:
         if isinstance(reddit_object, praw.models.Submission):
             # If post is a text post, search it's content
             if reddit_object.is_self:
-                # Check every word to see if it matches a URL
-                for i in reddit_object.selftext.split():
-                    if parse.validate_url(i):
-                        self.url = i
-                        return reddit_object
-            # If the post is a link post, check it's URL
+                # Search text for URL
+                url = find_url(reddit_object.selftext)
+                # If found
+                if url:
+                    # Return it
+                    self.url = url
+                    return reddit_object
+            # Else if the post is a link post, check it's URL
             else:
                 if parse.validate_url(reddit_object.url):
                     self.url = reddit_object.url
                     return reddit_object
                 else:
                     return None
-        # If the object is a comment, check it's text
+        # Else if the object is a comment, check it's text
         elif isinstance(reddit_object, praw.models.Comment):
-            if reddit_object.author == consts.username: # Someone is trying to rereverse
+            # If the user is trying to rereverse, go get the original url
+            if reddit_object.author == consts.username:
                 self.rereverse = True
                 return self._determine_target_url(reddit_object.parent())
-            # Look through every word to see if one is a url
-            for i in reddit_object.body.split():
-                if parse.validate_url(i):
-                    self.url = i
-                    return reddit_object
-            # Check markdown links too
-            for i in REPatterns.link.findall(reddit_object.body):
-                if parse.validate_url(i):
-                    self.url = i
-                    return reddit_object
+            # Search text for URL
+            url = find_url(reddit_object.body)
+            # If found
+            if url:
+                # Return it
+                self.url = url
+                return reddit_object
             # We didn't find a gif, go up a level
             return self._determine_target_url(reddit_object.parent())
 
 
-# Works but might mark a sfw gif posted in a nsfw sub as nsfw ¯\_(ツ)_/¯
+def find_url(text):
+    """Checks a string for valid urls"""
+    # Look through every word to see if one is a url
+    for i in text:
+        if parse.validate_url(i):
+            return i
+    # Check markdown links too
+    for i in REPatterns.link.findall(text):
+        if parse.validate_url(i):
+            return i
+    return None
+
+
+# Works but will mark a sfw gif first posted in an nsfw sub as nsfw ¯\_(ツ)_/¯
 def is_nsfw(comment):
     # Identify if submission is nsfw
     post_nsfw = comment.submission.over_18
 
     # Why no underscore
     sub_nsfw = comment.subreddit.over18
-
+    # print("nsfw", post_nsfw, sub_nsfw)
     return post_nsfw or sub_nsfw

@@ -8,25 +8,31 @@ from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.gif import Gif
 
-class GfycatSingleton:
-    client = None
-
-    @classmethod
-    def get(cls):
-        if cls.client is None:
-            cls.client = Gfycat()
-        return cls.client
-
 
 class Gfycat:
-    def __init__(self):
-        self.timeout, self.token = self._load_data()
+    instance = None
 
-    def _load_data(self):
-        creds = CredentialsLoader.get_credentials()["gfycat"]
+    def __init__(self):
+        creds = CredentialsLoader.get_credentials()['gfycat']
         self.gfypath = creds["gfypath"]
         self.gfyid = creds["gfycat_id"]
         self.gfysecret = creds["gfycat_secret"]
+
+        self.token = CredentialsLoader.get_credentials()['gfycat'].get('refresh_token', None)
+        self.timeout = int(CredentialsLoader.get_credentials()['gfycat'].get('token_expiration', 0))
+
+        # self.timeout, self.token = self._load_data()
+
+
+    @classmethod
+    def get(cls):
+        if not cls.instance:
+            cls.instance = cls()
+        return cls.instance
+
+    def _load_data(self):
+
+
         try:
             with open(self.gfypath, 'r') as f:
                 data = json.load(f)
@@ -42,7 +48,9 @@ class Gfycat:
             json.dump((self.timeout, self.token), f)
 
     def get_token(self):
+        # If the token has expired, request a new one
         if self.timeout < int(time.time()):
+            # For some dumb reason it has to be a string
             data = "{'grant_type': 'client_credentials', " \
                    "'client_id': '" + self.gfyid + "','client_secret': '" + self.gfysecret + "'}"
             url = "https://api.gfycat.com/v1/oauth/token"
@@ -50,7 +58,8 @@ class Gfycat:
             response = r.json()
             self.timeout = int(time.time()) + response["expires_in"]
             self.token = response["access_token"]
-            self._save_data()
+            CredentialsLoader.set_credential('gfycat', 'refresh_token', self.token)
+            CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
         return self.token
 
     def get_gfycat(self, id):
@@ -59,8 +68,7 @@ class Gfycat:
         r = requests.get(url, headers=headers)
         return r.json()
 
-
-    def upload(self, filestream, type, nsfw=False):
+    def upload(self, filestream, media_type, nsfw=False):
         # If we hit a problem, restart this segment
         tries = 3
         while tries:
@@ -78,9 +86,9 @@ class Gfycat:
             # upload
             url = "https://filedrop.gfycat.com"
             data = {"key": metadata["gfyname"]}
-            if type == consts.VIDEO:
+            if media_type == consts.VIDEO:
                 files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/mp4")}
-            elif type == consts.GIF:
+            elif media_type == consts.GIF:
                 files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/gif")}
             m = MultipartEncoder(fields=files)
             print("uploading...")
@@ -91,14 +99,13 @@ class Gfycat:
             print("waiting for encode...")
             r = requests.get(url)
             ticket = r.json()
-            print(ticket)
             # Sometimes we have to wait
             wait = 7
             while ticket["task"] == "encoding":
                 time.sleep(wait)
                 r = requests.get(url)
                 ticket = r.json()
-                print(ticket)
+            print(ticket)
             # If there was something wrong, we loop back and try again
             if ticket["task"] == "NotFoundo":
                 print("Error uploading? Trying again")

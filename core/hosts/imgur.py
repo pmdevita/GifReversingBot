@@ -11,60 +11,45 @@ from requests_toolbelt import MultipartEncoder
 
 from core import constants as consts
 from core.gif import Gif
-# from keys import imgurpath
 from core.credentials import CredentialsLoader
-
-# Bad solution but I don't want to touch this. Rewrite the client
-# for our own needs in the future, especially because imgurpython
-# is deprecated
-
-class ImgurClientSingleton:
-    client = None
-
-    @classmethod
-    def get(cls):
-        if cls.client is None:
-            creds = CredentialsLoader.get_credentials()
-            cls.client = ImgurClient(creds['imgur']['imgur_id'], creds['imgur']['imgur_secret'])
-        return cls.client
 
 
 class ImgurClient(pImgurClient):
+    instance = None
+
     def __init__(self, id, secret):
         self.client_id = id
         self.client_secret = secret
         self.auth = None
         self.mashape_key = None
 
-        imcred = self.loadimgur()
-        if imcred == None:
+        access = CredentialsLoader.get_credentials()['imgur'].get('access_token', None)
+        refresh = CredentialsLoader.get_credentials()['imgur'].get('refresh_token', None)
+        # imgur_credentials = self.loadimgur()
+        if access and refresh:
+            self.auth = AuthWrapper(access, refresh, id, secret)
+        else:
+            # Oauth setup
             print("Imgur Auth URL: ", self.get_auth_url('pin'))
             pin = input("Paste the pin here:")
             credentials = self.authorize(pin, 'pin')
-            self.saveimgur((credentials['access_token'], credentials['refresh_token']))
+            CredentialsLoader.set_credential('imgur', 'access_token', credentials['access_token'])
+            CredentialsLoader.set_credential('imgur', 'refresh_token', credentials['refresh_token'])
+
+            # self.saveimgur((credentials['access_token'], credentials['refresh_token']))
+
             self.set_user_auth(credentials['access_token'], credentials['refresh_token'])
             self.auth = AuthWrapper(credentials['access_token'], credentials['refresh_token'], id, secret)
-        else:
-            self.auth = AuthWrapper(imcred[0], imcred[1], id, secret)
 
         # self.credits = self.get_credits()
 
-    def loadimgur(self):
-        imgurpath = CredentialsLoader.get_credentials()['imgur']['imgur_path']
-        try:
-            with open(imgurpath, 'r') as f:
-                data = json.load(f)
-                if data == None:
-                    return None
-                else:
-                    return data
-        except:
-            return None
+    @classmethod
+    def get(cls):
+        if not cls.instance:
+            credentials = CredentialsLoader.get_credentials()
+            cls.instance = cls(credentials['imgur']['imgur_id'], credentials['imgur']['imgur_secret'])
+        return cls.instance
 
-    def saveimgur(self, data):
-        imgurpath = CredentialsLoader.get_credentials()['imgur']['imgur_path']
-        with open(imgurpath, 'w') as f:
-            json.dump(data, f)
 
 
 class AuthWrapper(pAuthWrapper):
@@ -86,8 +71,7 @@ class AuthWrapper(pAuthWrapper):
         response_data = response.json()
         self.current_access_token = response_data['access_token']
 
-        with open(imgurpath, 'w') as f:
-            json.dump((response_data['access_token'], self.refresh_token), f)
+        CredentialsLoader.set_credential('imgur', 'access_token', response_data['access_token'])
 
 
 def imgurupload(file, type, nsfw=False):
@@ -185,7 +169,7 @@ def imgurupload(file, type, nsfw=False):
                     return None
 
             # TODO: once gif uploading is fixed, unindent this
-            image_url = "https://imgur.com/{}.gifv".format(image_id)
-            gif = Gif(consts.IMGUR, image_id, url=image_url, nsfw=nsfw)
+            # image_url = "https://imgur.com/{}.gifv".format(image_id)
+            gif = Gif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
         return gif

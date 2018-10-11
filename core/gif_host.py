@@ -8,15 +8,15 @@ import core.hosts.imgur
 from core import constants as consts
 from core.gif import Gif
 from core.regex import REPatterns
-from core.hosts.imgur import ImgurClientSingleton
-from core.hosts.gfycat import GfycatSingleton
+from core.hosts.imgur import ImgurClient
+from core.hosts.gfycat import Gfycat as GfycatClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration
 from core import upload
 
 creds = CredentialsLoader.get_credentials()
-imgur = ImgurClientSingleton.get()
-gfycat = GfycatSingleton.get()
+imgur = ImgurClient.get()
+gfycat = GfycatClient.get()
 
 class GifHost:
     type = None
@@ -74,6 +74,8 @@ class ImgurGif(GifHost):
             gallery = imgur.gallery_item(imgur_match[1])
             if not isinstance(gallery, GalleryImage):
                 self.id = gallery.images[0]['id']
+            else:
+                self.id = gallery.id
         try:
             self.pic = imgur.get_image(self.id)  # take first image from gallery album
         except ImgurClientError as e:
@@ -139,6 +141,7 @@ class RedditGif(GifHost):
     def __init__(self, context):
         super(RedditGif, self).__init__(context)
         self.id = REPatterns.reddit_gif.findall(context.url)[0]
+        self.url = context.url
 
     def analyze(self):
         # print(self.url)
