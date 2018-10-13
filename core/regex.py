@@ -33,5 +33,8 @@ class REPatterns:
     # Markdown link
     link = re.compile("\[.*?\] *\n? *\((.*?)\)")
 
+    # Reddit submission link
+    reddit_submission = re.compile("^http(?:s)?://(?:\w+?\.)?reddit.com/r/(?P<subreddit>.*?)/comments/(?P<thread_id>\w{6})/(?P<post_slug>.*?)")
+
 if __name__ == '__main__':
-    print(REPatterns.link.findall(""))
+    print(REPatterns.reddit_submission.findall("https://www.reddit.com/r/holdmybeer/comments/9nn67x/hmb_while_i_jump_over_this_pole/"))

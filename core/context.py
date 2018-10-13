@@ -36,8 +36,9 @@ class CommentContext:
                     return None
         # Else if the object is a comment, check it's text
         elif isinstance(reddit_object, praw.models.Comment):
-            # If the user is trying to rereverse, go get the original url
-            if reddit_object.author == consts.username:
+            # If the comment was made by the bot, it must be a rereverse request
+            # If the rereverse flag is already set, we must be at least a loop deep
+            if reddit_object.author == consts.username and not self.rereverse:
                 self.rereverse = True
                 return self._determine_target_url(reddit_object.parent())
             # Search text for URL
@@ -54,7 +55,7 @@ class CommentContext:
 def find_url(text):
     """Checks a string for valid urls"""
     # Look through every word to see if one is a url
-    for i in text:
+    for i in text.split():
         if parse.validate_url(i):
             return i
     # Check markdown links too
@@ -73,3 +74,11 @@ def is_nsfw(comment):
     sub_nsfw = comment.subreddit.over18
     # print("nsfw", post_nsfw, sub_nsfw)
     return post_nsfw or sub_nsfw
+
+if __name__ == '__main__':
+    find_url("""Here is your gif!
+https://gfycat.com/SneakyPeacefulAltiplanochinchillamouse
+
+---
+
+^(I am a bot.) [^(Report an issue)](https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue)""")

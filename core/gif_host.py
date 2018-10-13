@@ -41,7 +41,7 @@ class GifHost:
             return None
 
     @classmethod
-    def open(cls, context):
+    def open(cls, context, reddit):
         url = context.url
         # Imgur
         if REPatterns.imgur.findall(url):
@@ -54,7 +54,7 @@ class GifHost:
             return RedditGif(context)
         # Reddit Vid
         if REPatterns.reddit_vid.findall(url):
-            return RedditVid(context)
+            return RedditVid(context, reddit)
 
         print("Unknown URL Type", url)
         return None
@@ -154,7 +154,7 @@ class RedditGif(GifHost):
 class RedditVid(GifHost):
     type = consts.REDDITVIDEO
 
-    def __init__(self, context):
+    def __init__(self, context, reddit):
         super(RedditVid, self).__init__(context)
         self.uploader = consts.IMGUR
         self.id = REPatterns.reddit_vid.findall(self.context.url)[0]
@@ -162,15 +162,12 @@ class RedditVid(GifHost):
         headers = {"User-Agent": consts.spoof_user_agent}
         # Follow redirect to post URL
         r = requests.get(self.context.url, headers=headers)
-        # Grab JSON of post
-        r = requests.get(r.url + ".json", headers=headers)
-        data = r.json()
-        if isinstance(data, dict):
-            if data.get("message", None) == "Not Found":
-                self.url = None
-                return
-        self.url = data[0]["data"]["children"][0]["data"]["secure_media"]["reddit_video"]["fallback_url"]
-        print(self.url)
+        submission_id = REPatterns.reddit_submission.findall(r.url)
+        if submission_id:
+            submission = reddit.submission(id=REPatterns.reddit_submission.findall(r.url)[0][1])
+            if submission.is_video:
+                self.url = submission.media['reddit_video']['fallback_url']
+                print(self.url)
 
     def analyze(self):
         # print(self.url)

@@ -6,7 +6,7 @@ from core.process import process_comment
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
 from core import constants as consts
-
+from core.hidesecret import secret_process
 
 credentials = CredentialsLoader().get_credentials()
 
@@ -24,8 +24,11 @@ while True:
             if message.was_comment:
                 if message.subject == "username mention":
                     process_comment(reddit, reddit.comment(message.id))
-                elif message.subject == "comment reply" and REPatterns.reply_mention.findall(message.body):
-                    process_comment(reddit, reddit.comment(message.id))
+                elif message.subject == "comment reply":
+                    if REPatterns.reply_mention.findall(message.body):
+                        process_comment(reddit, reddit.comment(message.id))
+                    else:
+                        secret_process(reddit, message)
             else:  # was a message
                 # if message.first_message == "None":
                 #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")

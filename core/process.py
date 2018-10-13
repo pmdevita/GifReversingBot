@@ -26,7 +26,7 @@ def process_comment(reddit, comment):
 
     # Create object to grab gif from host
     print(context.url)
-    gif_host = GifHost.open(context)
+    gif_host = GifHost.open(context, reddit)
 
     # If the link was not recognized, return
     if not gif_host:
