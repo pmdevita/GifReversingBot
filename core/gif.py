@@ -7,6 +7,7 @@ class Gif:
         self.id = id
         # Do we log this gif in the db?
         self.log = log
+        self.audio = False
 
         self.nsfw = nsfw
 
@@ -20,5 +21,9 @@ class Gif:
             self.url = "https://i.redd.it/{}.gif".format(id)
         elif host == consts.REDDITVIDEO:
             self.url = "https://v.redd.it/{}".format(id)
+            # self.audio = True
+        elif host == consts.STREAMABLE:
+            self.url = "https://streamable.com/{}".format(id)
+            self.audio = True
         else:
             self.url = None

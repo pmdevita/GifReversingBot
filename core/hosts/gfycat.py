@@ -23,7 +23,6 @@ class Gfycat:
 
         # self.timeout, self.token = self._load_data()
 
-
     @classmethod
     def get(cls):
         if not cls.instance:
@@ -31,8 +30,6 @@ class Gfycat:
         return cls.instance
 
     def _load_data(self):
-
-
         try:
             with open(self.gfypath, 'r') as f:
                 data = json.load(f)

@@ -16,7 +16,7 @@ class REPatterns:
     # imgur_gallery = re.compile(
     #     "^(?:|http://|https://|http://i\.|https://i\.|i\.)imgur.com/(?:gallery/)(.*?)(?:|\..*|/.*)$")
 
-    imgur = re.compile("^http(?:s)?://(?:\w+?\.)?imgur.com/(gallery/)?(?(1)(?P<gallery_id>.{7})|(?P<image_id>.{7}))")
+    imgur = re.compile("^http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>.{7})|(?(2)(?P<gallery_id>.{7})|(?P<image_id>.{7})))")
 
     # Gfycat
     gfycat = re.compile("^http(?:s)?://(?:\w+?\.)?gfycat\.com/(?:gifs/detail/)?([a-zA-Z]*)")
@@ -26,6 +26,9 @@ class REPatterns:
 
     # Reddit Video
     reddit_vid = re.compile("^http(?:s)?://v.redd.it/(.*)")
+
+    # Streamable
+    streamable = re.compile("^http(?:s)?://streamable.com/(.*)")
 
     # Mention in a comment reply
     reply_mention = re.compile("u/{}".format(consts.username.lower()), re.I)

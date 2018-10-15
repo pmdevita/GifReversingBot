@@ -1,4 +1,3 @@
-import json
 import time
 
 import requests
@@ -146,7 +145,11 @@ def imgurupload(file, type, nsfw=False):
             params = {"tickets[]": upload["data"]["ticket"]}
             print("waiting for processing...")
             r = requests.get(url, params, headers=headers)
-            ticket = r.json()
+            try:
+                ticket = r.json()
+            except:
+                print(r.text)
+                input()
             print(r.text)
             image_id = None
             while ticket["success"] == True:
@@ -157,7 +160,11 @@ def imgurupload(file, type, nsfw=False):
                     return None
                 time.sleep(5)
                 r = requests.get(url, params, headers=headers)
-                ticket = r.json()
+                try:
+                    ticket = r.json()
+                except:
+                    print(r.text)
+                    input()
                 print(r.text)
             if not image_id:
                 tries -= 1
@@ -173,3 +180,8 @@ def imgurupload(file, type, nsfw=False):
             gif = Gif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
         return gif
+
+
+if __name__ == '__main__':
+    with open("../../temp.mp4", 'rb') as f:
+        imgurupload(f, consts.VIDEO)

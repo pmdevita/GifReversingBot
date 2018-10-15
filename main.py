@@ -24,7 +24,7 @@ while True:
             if message.was_comment:
                 if message.subject == "username mention":
                     process_comment(reddit, reddit.comment(message.id))
-                elif message.subject == "comment reply":
+                elif message.subject == "comment reply" or message.subject == "post reply":
                     if REPatterns.reply_mention.findall(message.body):
                         process_comment(reddit, reddit.comment(message.id))
                     else:

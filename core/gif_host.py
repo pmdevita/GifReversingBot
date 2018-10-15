@@ -1,6 +1,7 @@
 import requests
 import sys
 from io import BytesIO
+from pprint import pprint
 from imgurpython.imgur.models.gallery_image import GalleryImage
 from imgurpython.helpers.error import ImgurClientError
 
@@ -10,6 +11,7 @@ from core.gif import Gif
 from core.regex import REPatterns
 from core.hosts.imgur import ImgurClient
 from core.hosts.gfycat import Gfycat as GfycatClient
+from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration
 from core import upload
@@ -17,12 +19,16 @@ from core import upload
 creds = CredentialsLoader.get_credentials()
 imgur = ImgurClient.get()
 gfycat = GfycatClient.get()
+streamable = StreamableClient.get()
 
 class GifHost:
     type = None
 
     def __init__(self, context):
         self.context = context
+
+    def analyze(self):
+        raise NotImplemented
 
     def reverse(self):
         raise NotImplemented
@@ -55,6 +61,9 @@ class GifHost:
         # Reddit Vid
         if REPatterns.reddit_vid.findall(url):
             return RedditVid(context, reddit)
+        # Streamable
+        if REPatterns.streamable.findall(url):
+            return Streamable(context)
 
         print("Unknown URL Type", url)
         return None
@@ -68,14 +77,18 @@ class ImgurGif(GifHost):
         self.uploader = consts.IMGUR
         # Retrieve the ID
         imgur_match = REPatterns.imgur.findall(self.context.url)[0]
-        if imgur_match[2]: # Image match
+        if imgur_match[4]: # Image match
             self.id = imgur_match[2]
-        elif imgur_match[1]: # Gallery match
-            gallery = imgur.gallery_item(imgur_match[1])
+        elif imgur_match[3]: # Gallery match
+            gallery = imgur.gallery_item(imgur_match[3])
             if not isinstance(gallery, GalleryImage):
                 self.id = gallery.images[0]['id']
             else:
                 self.id = gallery.id
+        elif imgur_match[2]: # Album match
+            album = imgur.get_album(imgur_match[2])
+            self.id = album.images[0]['id']
+
         try:
             self.pic = imgur.get_image(self.id)  # take first image from gallery album
         except ImgurClientError as e:
@@ -95,7 +108,7 @@ class ImgurGif(GifHost):
         duration = get_duration(BytesIO(r.content))
 
 
-        if duration <= 30:  # likely uploaded as a mp4, we should reupload through that
+        if duration < 30:  # likely uploaded as a mp4, we should reupload through that
             self.url = self.pic.mp4
             return consts.VIDEO
         else:               # has to have been a gif
@@ -197,6 +210,26 @@ class RedditVid(GifHost):
             return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
             return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
+
+
+class Streamable(GifHost):
+    type = consts.STREAMABLE
+
+    def __init__(self, context):
+        super(Streamable, self).__init__(context)
+        self.id = REPatterns.streamable.findall(self.context.url)[0]
+
+    @property
+    def url(self):
+        return streamable.download_video(self.id)
+
+    def analyze(self):
+        return consts.VIDEO
+
+    def upload_video(self, video):
+        return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
+
+
 
 class LinkGif(GifHost):
     pass

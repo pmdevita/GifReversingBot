@@ -53,18 +53,18 @@ def process_comment(reddit, comment):
         return
 
     reversed_gif = None
+
+    r = requests.get(gif_host.url)
+
     # Reverse it as a GIF
     if method == consts.GIF:
-        # Download gif
-        r = requests.get(gif_host.url)
         # With reversed gif
         with reverse_gif(BytesIO(r.content)) as f:
             # Give to gif_host's uploader
             reversed_gif = gif_host.upload_gif(f)
     # Reverse it as a video
     elif method == consts.VIDEO:
-        r = requests.get(gif_host.url)
-        with reverse_mp4(BytesIO(r.content)) as f:
+        with reverse_mp4(BytesIO(r.content), original_gif.audio) as f:
             reversed_gif = gif_host.upload_video(f)
     # Defer to the object's unique method
     elif method == consts.OTHER:

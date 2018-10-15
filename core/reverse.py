@@ -121,15 +121,24 @@ def reverse_gif(image, path=False):
     else:
         return open("temp.gif", "rb")
 
-def reverse_mp4(mp4):
+def reverse_mp4(mp4, audio=False):
     """
     :param mp4: filestream to reverse (must be a mp4)
     :return: filestream of an mp4
     """
     print("Reversing mp4...")
-    p = subprocess.Popen(
-        ["ffmpeg", "-loglevel", "panic", "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264", "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"],
-        stdin=subprocess.PIPE)
+
+    mute = ["ffmpeg", "-loglevel", "panic", "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
+            "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+    sound = ["ffmpeg", "-loglevel", "panic", "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
+             "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+
+    if audio:
+        command = sound
+    else:
+        command = mute
+
+    p = subprocess.Popen(command, stdin=subprocess.PIPE)
     response = p.communicate(input=mp4.read())
 
     reversed = open("temp.mp4", "rb")
