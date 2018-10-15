@@ -6,7 +6,7 @@ from core.process import process_comment
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
 from core import constants as consts
-from core.hidesecret import secret_process
+from core.secret import secret_process
 
 credentials = CredentialsLoader().get_credentials()
 

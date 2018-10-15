@@ -78,7 +78,7 @@ class ImgurGif(GifHost):
         # Retrieve the ID
         imgur_match = REPatterns.imgur.findall(self.context.url)[0]
         if imgur_match[4]: # Image match
-            self.id = imgur_match[2]
+            self.id = imgur_match[4]
         elif imgur_match[3]: # Gallery match
             gallery = imgur.gallery_item(imgur_match[3])
             if not isinstance(gallery, GalleryImage):
@@ -107,9 +107,10 @@ class ImgurGif(GifHost):
         r = requests.get(self.pic.mp4)
         duration = get_duration(BytesIO(r.content))
 
-
-        if duration < 30:  # likely uploaded as a mp4, we should reupload through that
-            self.url = self.pic.mp4
+        # If under a certain duration, it was likely uploaded as an mp4 (and it's easier
+        # for us to reverse it that way anyways)
+        if duration < 31:  # Interestingly, imgur appears to allow mp4s under 31 seconds
+            self.url = self.pic.mp4  # (rather than capping at 30 like they advertise)
             return consts.VIDEO
         else:               # has to have been a gif
             self.url = self.pic.gifv[:-1]
@@ -157,10 +158,8 @@ class RedditGif(GifHost):
         self.url = context.url
 
     def analyze(self):
-        # print(self.url)
-        # input()
-
         return consts.GIF
+
     def upload_gif(self, gif):
         return core.hosts.imgur.imgurupload(gif, consts.GIF)
 
@@ -183,8 +182,6 @@ class RedditVid(GifHost):
                 print(self.url)
 
     def analyze(self):
-        # print(self.url)
-        # input()
         r = requests.get(self.url)
         duration = get_duration(BytesIO(r.content))
         if duration <= 30:  # likely uploaded as a mp4, reupload through imgur
