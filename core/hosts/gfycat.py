@@ -104,7 +104,7 @@ class Gfycat:
                 ticket = r.json()
             print(ticket)
             # If there was something wrong, we loop back and try again
-            if ticket["task"] == "NotFoundo":
+            if ticket["task"] == "NotFoundo" or ticket["task"] == "error":
                 print("Error uploading? Trying again")
                 tries -= 1
                 if tries:

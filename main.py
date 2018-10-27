@@ -39,6 +39,10 @@ while True:
 
         time.sleep(consts.sleep_time)
 
+    except prawcore.exceptions.ResponseException as e:   # Something funky happened
+        print("Did a comment go missing?", e, vars(e))
+        time.sleep(consts.sleep_time)
+
     except prawcore.exceptions.RequestException:    # Unable to connect to Reddit
         print("Unable to connect to Reddit, is the internet down?")
         time.sleep(consts.sleep_time * 2)

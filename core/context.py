@@ -74,11 +74,3 @@ def is_nsfw(comment):
     sub_nsfw = comment.subreddit.over18
     # print("nsfw", post_nsfw, sub_nsfw)
     return post_nsfw or sub_nsfw
-
-if __name__ == '__main__':
-    find_url("""Here is your gif!
-https://gfycat.com/SneakyPeacefulAltiplanochinchillamouse
-
----
-
-^(I am a bot.) [^(Report an issue)](https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue)""")

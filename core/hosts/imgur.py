@@ -122,12 +122,25 @@ def imgurupload(file, type, nsfw=False):
         r = requests.post(url, headers=headers, data=m)
         upload = r.json()
         print(upload)
-        # input()
-
 
         if type == consts.GIF:
             image_id = upload["data"]["hash"]
             image_url = "https://imgur.com/{}.gifv".format(image_id)
+
+            # Did the upload actually publish?
+            headers = {"User-Agent": consts.spoof_user_agent}
+            # Follow redirect to post URL
+            r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
+            if r.url == "https://i.imgur.com/removed.png":
+                print("IMGUR GIF UPLOAD FAILURE, RETRYING...")
+                tries -= 1
+                if tries:
+                    file.seek(0)
+                    time.sleep(30)
+                    continue
+                else:
+                    return None
+
             print("Done?", image_url, "https://imgur.com/delete/" + upload["data"]["deletehash"])
             image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
                                     "doesn't work, please report an issue. Thanks!"
@@ -147,30 +160,43 @@ def imgurupload(file, type, nsfw=False):
             r = requests.get(url, params, headers=headers)
             try:
                 ticket = r.json()
-            except:
-                print(r.text)
-                input()
+            except Exception as e:
+                print("Error uploading to Imgur!", e)
+                if 'Imgur is over capacity!' in r.text:
+                    print("Imgur is over capacity! Waiting...")
+                    file.seek(0)
+                    time.sleep(90)
+                    continue
+
             print(r.text)
+            checks = 15
             image_id = None
             while ticket["success"] == True:
                 if ticket["data"]["done"]:
                     image_id = r.json()["data"]["done"][upload["data"]["ticket"]]
                     break
-                elif ticket["success"] == False:
-                    return None
+                else:
+                    checks -= 1
+                    if not checks:
+                        image_id = None
+                        break
                 time.sleep(5)
                 r = requests.get(url, params, headers=headers)
                 try:
                     ticket = r.json()
-                except:
-                    print(r.text)
-                    input()
+                except Exception as e:
+                    print("Error uploading to Imgur!", e)
+                    if 'Imgur is over capacity!' in r.text:
+                        print("Imgur is over capacity! Waiting...")
+                        file.seek(0)
+                        time.sleep(90)
+                        continue
                 print(r.text)
             if not image_id:
                 tries -= 1
                 if tries:
                     file.seek(0)
-                    time.sleep(5)
+                    time.sleep(30)
                     continue
                 else:
                     return None
@@ -183,5 +209,8 @@ def imgurupload(file, type, nsfw=False):
 
 
 if __name__ == '__main__':
-    with open("../../temp.mp4", 'rb') as f:
-        imgurupload(f, consts.VIDEO)
+    headers = {"User-Agent": consts.spoof_user_agent}
+    # Follow redirect to post URL
+    r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
+    if r.url == "https://i.imgur.com/removed.png":
+        pass    # failure

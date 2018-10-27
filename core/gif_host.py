@@ -114,10 +114,7 @@ class ImgurGif(GifHost):
             return consts.VIDEO
         else:               # has to have been a gif
             self.url = self.pic.gifv[:-1]
-            with requests.get(self.url, stream=True) as r:
-                size = sum(len(chunk) for chunk in r.iter_content(8196))
-            # Convert to MB
-            size = size / 1000000
+            size = get_gif_size(self.url)
             print("size in MB", size)
             # Due to gifski bloat, we may need to redirect to gfycat
             if size > 175:
@@ -180,6 +177,8 @@ class RedditVid(GifHost):
             if submission.is_video:
                 self.url = submission.media['reddit_video']['fallback_url']
                 print(self.url)
+        else:   # Maybe it was deleted?
+            self.id = None
 
     def analyze(self):
         r = requests.get(self.url)
@@ -193,14 +192,20 @@ class RedditVid(GifHost):
         else:  # fallback as a gif, upload to gfycat
             # I would like to be able to predict a >200MB GIF file size and switch from
             # Imgur to Gfycat as a result
-            self.uploader = consts.GFYCAT
-            return consts.GIF
+            if self.context.nsfw:
+                self.uploader = consts.GFYCAT
+                return consts.GIF
+            else:
+                self.uploader = consts.STREAMABLE
+                return consts.VIDEO
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
             return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
             return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        elif self.uploader == consts.STREAMABLE:
+            return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
 
     def upload_gif(self, gif):
         if self.uploader == consts.IMGUR:
@@ -230,3 +235,9 @@ class Streamable(GifHost):
 
 class LinkGif(GifHost):
     pass
+
+def get_gif_size(url):
+    """Returns size in MB"""
+    with requests.get(url, stream=True) as r:
+        size = sum(len(chunk) for chunk in r.iter_content(8196))
+    return size / 1000000
