@@ -2,7 +2,6 @@ import json
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import time
-from pprint import pprint
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
@@ -93,19 +92,22 @@ class Gfycat:
 
             # check status for gif's id
             url = "https://api.gfycat.com/v1/gfycats/fetch/status/" + metadata["gfyname"]
-            print("waiting for encode...")
+            print("waiting for encode...", end=" ")
             r = requests.get(url)
             ticket = r.json()
             # Sometimes we have to wait
+            percentage = 0
             wait = 7
             while ticket["task"] == "encoding":
                 time.sleep(wait)
                 r = requests.get(url)
                 ticket = r.json()
-            print(ticket)
+                if float(ticket.get('progress', 0)) > percentage:
+                    percentage = float(ticket['progress'])
+                    print(percentage, end=" ")
             # If there was something wrong, we loop back and try again
             if ticket["task"] == "NotFoundo" or ticket["task"] == "error":
-                print("Error uploading? Trying again")
+                print("Error uploading? Trying again", ticket)
                 tries -= 1
                 if tries:
                     filestream.seek(0)

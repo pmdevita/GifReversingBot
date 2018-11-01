@@ -125,14 +125,15 @@ def imgurupload(file, type, nsfw=False):
 
         if type == consts.GIF:
             image_id = upload["data"]["hash"]
-            image_url = "https://imgur.com/{}.gifv".format(image_id)
+            image_url = "https://i.imgur.com/{}.gif".format(image_id)
 
             # Did the upload actually publish?
             headers = {"User-Agent": consts.spoof_user_agent}
             # Follow redirect to post URL
-            r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
+            r = requests.get(image_url, headers=headers)
+            print(r.url)
             if r.url == "https://i.imgur.com/removed.png":
-                print("IMGUR GIF UPLOAD FAILURE, RETRYING...")
+                print("IMGUR GIF UPLOAD FAILURE")
                 tries -= 1
                 if tries:
                     file.seek(0)

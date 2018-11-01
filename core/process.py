@@ -1,9 +1,7 @@
 import requests
 from io import BytesIO
 
-from pprint import pprint
-
-from core.context import CommentContext, is_nsfw
+from core.context import CommentContext
 from core.reply import reply
 from core.gif_host import GifHost
 from core.reverse import reverse_mp4, reverse_gif

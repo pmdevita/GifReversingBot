@@ -1,7 +1,5 @@
 import requests
-import sys
 from io import BytesIO
-from pprint import pprint
 from imgurpython.imgur.models.gallery_image import GalleryImage
 from imgurpython.helpers.error import ImgurClientError
 
@@ -14,12 +12,12 @@ from core.hosts.gfycat import Gfycat as GfycatClient
 from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration
-from core import upload
 
 creds = CredentialsLoader.get_credentials()
 imgur = ImgurClient.get()
 gfycat = GfycatClient.get()
 streamable = StreamableClient.get()
+
 
 class GifHost:
     type = None
@@ -92,7 +90,8 @@ class ImgurGif(GifHost):
         try:
             self.pic = imgur.get_image(self.id)  # take first image from gallery album
         except ImgurClientError as e:
-            if e.status_code == 404: # pic is deleted or otherwise missing
+            print("Imgur returned 404, deleted image?")
+            if e.status_code == 404:
                 self.pic = None
                 self.id = None
 
@@ -167,7 +166,6 @@ class RedditVid(GifHost):
         super(RedditVid, self).__init__(context)
         self.uploader = consts.IMGUR
         self.id = REPatterns.reddit_vid.findall(self.context.url)[0]
-        # TODO: Apparently praw has this data, rewrite to use that
         headers = {"User-Agent": consts.spoof_user_agent}
         # Follow redirect to post URL
         r = requests.get(self.context.url, headers=headers)

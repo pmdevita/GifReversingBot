@@ -1,7 +1,7 @@
 import praw
 import prawcore
-from pprint import pprint
 import time
+import traceback
 from core.process import process_comment
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
@@ -50,3 +50,8 @@ while True:
     except KeyboardInterrupt:
         print("Exiting...")
         break
+
+    except Exception as e:
+        reddit.redditor("pmdevita").message("GRB Error!", "Help I crashed!\n\n    {}".format(
+            str(traceback.format_exc()).replace('\n', '\n    ')))
+        raise
