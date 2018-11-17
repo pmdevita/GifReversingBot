@@ -1,5 +1,5 @@
 import time
-
+import re
 import requests
 
 from imgurpython import ImgurClient as pImgurClient
@@ -11,7 +11,35 @@ from requests_toolbelt import MultipartEncoder
 from core import constants as consts
 from core.gif import Gif
 from core.credentials import CredentialsLoader
+from core.hosts import GifHost
 
+class ImgurHost(GifHost):
+    regex = re.compile("^http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>.{7})|(?(2)(?P<gallery_id>.{7})|(?P<image_id>.{7})))")
+    url = "https://imgur.com/{}.gifv"
+
+    def get_id(self):
+        self.uploader = consts.IMGUR
+        # Retrieve the ID
+        imgur_match = REPatterns.imgur.findall(self.context.url)[0]
+        if imgur_match[4]:  # Image match
+            self.id = imgur_match[4]
+        elif imgur_match[3]:  # Gallery match
+            gallery = imgur.gallery_item(imgur_match[3])
+            if not isinstance(gallery, GalleryImage):
+                self.id = gallery.images[0]['id']
+            else:
+                self.id = gallery.id
+        elif imgur_match[2]:  # Album match
+            album = imgur.get_album(imgur_match[2])
+            self.id = album.images[0]['id']
+
+        try:
+            self.pic = imgur.get_image(self.id)  # take first image from gallery album
+        except ImgurClientError as e:
+            print("Imgur returned 404, deleted image?")
+            if e.status_code == 404:
+                self.pic = None
+                self.id = None
 
 class ImgurClient(pImgurClient):
     instance = None
@@ -125,7 +153,7 @@ def imgurupload(file, type, nsfw=False):
 
         if type == consts.GIF:
             image_id = upload["data"]["hash"]
-            image_url = "https://i.imgur.com/{}.gif".format(image_id)
+            image_url = "https://i.imgur.com/{}.gifv".format(image_id)
 
             # Did the upload actually publish?
             headers = {"User-Agent": consts.spoof_user_agent}
@@ -133,14 +161,24 @@ def imgurupload(file, type, nsfw=False):
             r = requests.get(image_url, headers=headers)
             print(r.url)
             if r.url == "https://i.imgur.com/removed.png":
-                print("IMGUR GIF UPLOAD FAILURE")
-                tries -= 1
-                if tries:
-                    file.seek(0)
-                    time.sleep(30)
-                    continue
+                print("GIFV DID NOT GENERATE")
+                # Try gif URL
+                image_url = "https://i.imgur.com/{}.gif".format(image_id)
+                headers = {"User-Agent": consts.spoof_user_agent}
+                # Follow redirect to post URL
+                r = requests.get(image_url, headers=headers)
+                print(r.url)
+                if r.url == "https://i.imgur.com/removed.png":
+                    print("IMGUR GIF UPLOAD FAILURE")
+                    tries -= 1
+                    if tries:
+                        file.seek(0)
+                        time.sleep(30)
+                        continue
+                    else:
+                        return None
                 else:
-                    return None
+                    print("GIF LINK DOES WORK THOUGH")
 
             print("Done?", image_url, "https://imgur.com/delete/" + upload["data"]["deletehash"])
             image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \

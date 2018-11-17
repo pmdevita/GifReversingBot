@@ -4,3 +4,4 @@ imgurpython
 requests
 requests_toolbelt
 pony
+pymysql

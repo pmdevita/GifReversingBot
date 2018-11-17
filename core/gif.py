@@ -1,4 +1,24 @@
+from typing import Optional
+
 from core import constants as consts
+from core.hosts import GifHost
+from core.hosts import *
+
+class GifHostManager:
+    hosts = []
+
+    def __init__(self):
+        for host in GifHost.__subclasses__():
+            self.hosts.append(host)
+
+    def get_host(self, url=None, context=None) -> Optional[GifHost]:
+        if context:
+            url = context.url
+        for host in self.hosts:
+            if host.regex.findall(url):
+                return host
+        print("Unknown URL Type")
+        return None
 
 
 class Gif:

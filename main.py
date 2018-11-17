@@ -10,6 +10,8 @@ from core.secret import secret_process
 
 credentials = CredentialsLoader().get_credentials()
 
+mode = credentials['general']['mode']
+
 reddit = praw.Reddit(user_agent=consts.user_agent,
                      client_id=credentials['reddit']['client_id'],
                      client_secret=credentials['reddit']['client_secret'],
@@ -52,6 +54,7 @@ while True:
         break
 
     except Exception as e:
-        reddit.redditor("pmdevita").message("GRB Error!", "Help I crashed!\n\n    {}".format(
-            str(traceback.format_exc()).replace('\n', '\n    ')))
+        if mode == "production":
+            reddit.redditor("pmdevita").message("GRB Error!", "Help I crashed!\n\n    {}".format(
+                str(traceback.format_exc()).replace('\n', '\n    ')))
         raise

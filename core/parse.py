@@ -24,4 +24,26 @@ def get_url(comment):
 
 def validate_url(url):
     """Validate a URL by checking it against Validators and our regex"""
-    return validators.url(url) and not REPatterns.textpost.match(url)
+    if validators.url(url) and not REPatterns.textpost.match(url):
+        return url_host(url)
+
+
+def url_host(url):
+    # Imgur
+    if REPatterns.imgur.findall(url):
+        return True
+    # Gfycat
+    if REPatterns.gfycat.findall(url):
+        return True
+    # Reddit Gif
+    if REPatterns.reddit_gif.findall(url):
+        return True
+    # Reddit Vid
+    if REPatterns.reddit_vid.findall(url):
+        return True
+    # Streamable
+    if REPatterns.streamable.findall(url):
+        return True
+
+    print("Unknown URL Type", url)
+    return False

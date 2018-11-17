@@ -3,6 +3,7 @@ from datetime import date
 from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit
 
 from core.gif import Gif as Gif_object
+from core.credentials import CredentialsLoader
 
 db = Database()
 
@@ -28,6 +29,21 @@ CREATE TABLE "gif" (
   "nsfw" BOOLEAN NOT NULL
 )
 
+v3 Database
+CREATE TABLE `gif` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `origin_host` INT(11) NOT NULL,
+    `origin_id` VARCHAR(255) NOT NULL,
+    `reversed_host` INT(11) NOT NULL,
+    `reversed_id` VARCHAR(255) NOT NULL,
+    `time` DATE NOT NULL,
+    `nsfw` TINYINT(1) NOT NULL,
+    `total_requests` INT NULL,
+    `last_requested_date` DATE NULL,
+    PRIMARY KEY (`id`)
+)
+
+
 """
 
 
@@ -40,9 +56,18 @@ class Gif(db.Entity):
     reversed_id = Required(str)
     time = Required(date)
     nsfw = Optional(bool)
+    total_requests = Optional(int)
+    last_requested_date = Optional(date)
 
-# Use MariaDB?
-db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
+creds = CredentialsLoader.get_credentials()['database']
+
+if creds['type'] == 'sqlite':
+    db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
+elif creds['type'] == 'mysql':
+    db.bind(provider="mysql", host=creds['host'], user=creds['username'], passwd=creds['password'],
+            db=creds['database'])
+else:
+    raise Exception("No database configuration")
 
 db.generate_mapping(create_tables=True)
 
@@ -52,21 +77,25 @@ def check_database(original_gif):
     with db_session:
         query = select(g for g in Gif if g.origin_host == original_gif.host and g.origin_id == original_gif.id)
         gif = query.first()
-    # If we have, get it's host and id
-    if gif:
-        host = gif.reversed_host
-        id = gif.reversed_id
-    # If this is not a gif we have reversed before, perhaps this is a re-reverse?
-    else:
-        with db_session:
+        # If we have, get it's host and id
+        if gif:
+            host = gif.reversed_host
+            id = gif.reversed_id
+        # If this is not a gif we have reversed before, perhaps this is a re-reverse?
+        else:
             query = select(g for g in Gif if g.reversed_host == original_gif.host and g.reversed_id == original_gif.id)
             gif = query.first()
+            if gif:
+                host = gif.origin_host
+                id = gif.origin_id
         if gif:
-            host = gif.origin_host
-            id = gif.origin_id
-    if gif:
-        print("Found in database!", gif.origin_id, gif.reversed_id)
-        return Gif_object(host, id, nsfw=gif.nsfw)
+            print("Found in database!", gif.origin_id, gif.reversed_id)
+            gif.last_requested_date = date.today()
+            if gif.total_requests:
+                gif.total_requests += 1
+            else:
+                gif.total_requests = 1
+            return Gif_object(host, id, nsfw=gif.nsfw)
     return None
 
 
@@ -74,7 +103,8 @@ def check_database(original_gif):
 def add_to_database(original_gif, reversed_gif):
     with db_session:
         new_gif = Gif(origin_host=original_gif.host, origin_id=original_gif.id, reversed_host=reversed_gif.host,
-                      reversed_id=reversed_gif.id, time=date.today(), nsfw=original_gif.nsfw)
+                      reversed_id=reversed_gif.id, time=date.today(), nsfw=original_gif.nsfw, total_requests=1,
+                      last_requsted_date=date.today())
         commit()
 
 

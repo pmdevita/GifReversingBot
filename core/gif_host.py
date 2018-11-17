@@ -13,6 +13,7 @@ from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration
 
+
 creds = CredentialsLoader.get_credentials()
 imgur = ImgurClient.get()
 gfycat = GfycatClient.get()
@@ -73,22 +74,26 @@ class ImgurGif(GifHost):
     def __init__(self, context):
         super(ImgurGif, self).__init__(context)
         self.uploader = consts.IMGUR
+
         # Retrieve the ID
         imgur_match = REPatterns.imgur.findall(self.context.url)[0]
-        if imgur_match[4]: # Image match
-            self.id = imgur_match[4]
-        elif imgur_match[3]: # Gallery match
-            gallery = imgur.gallery_item(imgur_match[3])
-            if not isinstance(gallery, GalleryImage):
-                self.id = gallery.images[0]['id']
-            else:
-                self.id = gallery.id
-        elif imgur_match[2]: # Album match
-            album = imgur.get_album(imgur_match[2])
-            self.id = album.images[0]['id']
 
+        # Try block for catching imgur 404s
         try:
+            if imgur_match[4]: # Image match
+                self.id = imgur_match[4]
+            elif imgur_match[3]: # Gallery match
+                gallery = imgur.gallery_item(imgur_match[3])
+                if not isinstance(gallery, GalleryImage):
+                    self.id = gallery.images[0]['id']   # First image from gallery album
+                else:
+                    self.id = gallery.id
+            elif imgur_match[2]: # Album match
+                album = imgur.get_album(imgur_match[2])
+                self.id = album.images[0]['id'] # First image of album
+
             self.pic = imgur.get_image(self.id)  # take first image from gallery album
+
         except ImgurClientError as e:
             print("Imgur returned 404, deleted image?")
             if e.status_code == 404:

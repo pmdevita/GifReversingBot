@@ -20,12 +20,12 @@ def process_comment(reddit, comment):
 
     # Create the comment context object
     context = CommentContext(comment)
-    if not context.context:         # Did our search return nothing?
+    if not context.url:         # Did our search return nothing?
         print("Didn't find a URL")
         return
 
     if context.rereverse:           # Is the user asking to rereverse?
-        reply(comment, context)
+        reply(context, context.url)
         return
 
     # Create object to grab gif from host
@@ -46,7 +46,7 @@ def process_comment(reddit, comment):
 
     # If it was in the database, reuse it
     if gif:
-        reply(comment, gif)
+        reply(context, gif.url)
         return
 
     # Analyze how the gif should be reversed
@@ -80,4 +80,4 @@ def process_comment(reddit, comment):
             add_to_database(gif_host.get_gif(), reversed_gif)
         # Reply
         print("Replying!", reversed_gif.url)
-        reply(comment, reversed_gif)
+        reply(context, reversed_gif.url)
