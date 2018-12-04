@@ -181,8 +181,8 @@ def imgurupload(file, type, nsfw=False):
                     print("GIF LINK DOES WORK THOUGH")
 
             print("Done?", image_url, "https://imgur.com/delete/" + upload["data"]["deletehash"])
-            image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
-                                    "doesn't work, please report an issue. Thanks!"
+            # image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
+            #                        "doesn't work, please report an issue. Thanks!"
             # input()
             gif = Gif(consts.IMGUR, image_id, url=image_url, log=False, nsfw=nsfw)
 
@@ -214,11 +214,10 @@ def imgurupload(file, type, nsfw=False):
                 if ticket["data"]["done"]:
                     image_id = r.json()["data"]["done"][upload["data"]["ticket"]]
                     break
-                else:
-                    checks -= 1
-                    if not checks:
-                        image_id = None
-                        break
+                checks -= 1
+                if not checks:
+                    image_id = None
+                    break
                 time.sleep(5)
                 r = requests.get(url, params, headers=headers)
                 try:
@@ -232,12 +231,14 @@ def imgurupload(file, type, nsfw=False):
                         continue
                 print(r.text)
             if not image_id:
+                print("IMGUR TIMED OUT")
                 tries -= 1
                 if tries:
                     file.seek(0)
                     time.sleep(30)
                     continue
                 else:
+                    print("IMGUR UPLOAD FAILURE")
                     return None
 
             # TODO: once gif uploading is fixed, unindent this

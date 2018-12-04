@@ -142,10 +142,22 @@ class GfycatGif(GifHost):
         super(GfycatGif, self).__init__(context)
         self.id = REPatterns.gfycat.findall(context.url)[0]
         self.pic = gfycat.get_gfycat(self.id)
+        # Can't get the full gif file for some reason so we always use mp4?
         self.url = self.pic["gfyItem"]["mp4Url"]
 
     def analyze(self):
-        return consts.VIDEO
+        duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
+        sec = duration % 60
+        min = int((duration - sec) / 60)
+        print("duration {}:{}".format(min, sec))
+        print(self.pic)
+        if duration < 61:   # TODO: Is it to 61 like Imgur is to 31?
+            return consts.VIDEO
+        else:
+            return consts.GIF
+
+    def upload_gif(self, gif):
+        return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
 
     def upload_video(self, video):
         return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)

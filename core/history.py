@@ -91,10 +91,7 @@ def check_database(original_gif):
         if gif:
             print("Found in database!", gif.origin_id, gif.reversed_id)
             gif.last_requested_date = date.today()
-            if gif.total_requests:
-                gif.total_requests += 1
-            else:
-                gif.total_requests = 1
+            gif.total_requests += 1
             return Gif_object(host, id, nsfw=gif.nsfw)
     return None
 
@@ -104,7 +101,7 @@ def add_to_database(original_gif, reversed_gif):
     with db_session:
         new_gif = Gif(origin_host=original_gif.host, origin_id=original_gif.id, reversed_host=reversed_gif.host,
                       reversed_id=reversed_gif.id, time=date.today(), nsfw=original_gif.nsfw, total_requests=1,
-                      last_requsted_date=date.today())
+                      last_requested_date=date.today())
         commit()
 
 

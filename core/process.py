@@ -19,7 +19,7 @@ def process_comment(reddit, comment):
     print("New request by " + comment.author.name)
 
     # Create the comment context object
-    context = CommentContext(comment)
+    context = CommentContext(reddit, comment)
     if not context.url:         # Did our search return nothing?
         print("Didn't find a URL")
         return
