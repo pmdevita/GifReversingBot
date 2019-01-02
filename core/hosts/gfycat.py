@@ -51,7 +51,11 @@ class Gfycat:
                    "'client_id': '" + self.gfyid + "','client_secret': '" + self.gfysecret + "'}"
             url = "https://api.gfycat.com/v1/oauth/token"
             r = requests.post(url, data=data)
-            response = r.json()
+            try:
+                response = r.json()
+            except json.decoder.JSONDecodeError as e:
+                print(r.text)
+                raise
             self.timeout = int(time.time()) + response["expires_in"]
             self.token = response["access_token"]
             CredentialsLoader.set_credential('gfycat', 'refresh_token', self.token)
@@ -94,7 +98,11 @@ class Gfycat:
             url = "https://api.gfycat.com/v1/gfycats/fetch/status/" + metadata["gfyname"]
             print("waiting for encode...", end=" ")
             r = requests.get(url)
-            ticket = r.json()
+            try:
+                ticket = r.json()
+            except json.decoder.JSONDecodeError as e:
+                print(r.text)
+                raise
             # Sometimes we have to wait
             percentage = 0
             wait = 7

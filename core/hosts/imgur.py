@@ -1,6 +1,7 @@
 import time
 import re
 import requests
+import json.decoder
 
 from imgurpython import ImgurClient as pImgurClient
 from imgurpython.client import API_URL
@@ -110,7 +111,8 @@ def imgurupload(file, type, nsfw=False):
     :return: string link to image
     """
     # First, obtain new album to upload to
-    tries = 3
+    sleep = 60
+    tries = 4
     while tries:
         url = "https://imgur.com/upload/checkcaptcha"
         params = {"total_uploads": "1", "create_album": "true"}
@@ -119,10 +121,26 @@ def imgurupload(file, type, nsfw=False):
                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Referer": "https://imgur.com/upload",
                    "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9", "Host": "imgur.com",
                    "cookie": consts.imgur_spoof_cookie}
-        print("getting imgur album id...")
+        print("getting imgur album id... ", end="")
         r = requests.post(url, data=params, headers=headers)
-        setup = r.json()
-        print(setup)
+        try:
+            setup = r.json()
+        except json.decoder.JSONDecodeError as e:
+            if "Imgur is over capacity!" in r.text:
+                print("Imgur is over capacity!")
+                if tries:
+                    time.sleep(sleep)
+                    sleep = sleep * 2
+                    tries -= 1
+                    continue
+                else:
+                    print("Imgur not responding, upload failed!")
+                    return Done
+            print("I have no idea what's going on")
+            print(r.text)
+            input()
+
+        print(setup['data']['new_album_id'])
         # input()
 
 
@@ -144,12 +162,25 @@ def imgurupload(file, type, nsfw=False):
         else:
             raise Exception("Wrong upload file type")
 
-        print("uploading...")
+        print("uploading... ", end="")
         m = MultipartEncoder(fields=files)
         headers["Content-Type"] = m.content_type
         r = requests.post(url, headers=headers, data=m)
-        upload = r.json()
-        print(upload)
+        try:
+            upload = r.json()
+        except json.decoder.JSONDecodeError as e:
+            if "Imgur is over capacity!" in r.text:
+                print("Imgur is over capacity!")
+                if tries:
+                    time.sleep(sleep)
+                    sleep = sleep * 2
+                    tries -= 1
+                    continue
+                else:
+                    print("Imgur not responding, upload failed!")
+                    return Done
+
+        print("received wait ticket:", upload['data']['ticket'])
 
         if type == consts.GIF:
             image_id = upload["data"]["hash"]
@@ -199,16 +230,23 @@ def imgurupload(file, type, nsfw=False):
             r = requests.get(url, params, headers=headers)
             try:
                 ticket = r.json()
-            except Exception as e:
-                print("Error uploading to Imgur!", e)
-                if 'Imgur is over capacity!' in r.text:
-                    print("Imgur is over capacity! Waiting...")
-                    file.seek(0)
-                    time.sleep(90)
-                    continue
+            except json.decoder.JSONDecodeError as e:
+                if "Imgur is over capacity!" in r.text:
+                    print("Imgur is over capacity!")
+                    if tries:
+                        time.sleep(sleep)
+                        sleep = sleep * 2
+                        tries -= 1
+                        continue
+                    else:
+                        print("Imgur not responding, upload failed!")
+                        return Done
+                print("I have no idea what's going on")
+                print(r.text)
+                input()
 
             print(r.text)
-            checks = 15
+            checks = 13
             image_id = None
             while ticket["success"] == True:
                 if ticket["data"]["done"]:
@@ -222,13 +260,20 @@ def imgurupload(file, type, nsfw=False):
                 r = requests.get(url, params, headers=headers)
                 try:
                     ticket = r.json()
-                except Exception as e:
-                    print("Error uploading to Imgur!", e)
-                    if 'Imgur is over capacity!' in r.text:
-                        print("Imgur is over capacity! Waiting...")
-                        file.seek(0)
-                        time.sleep(90)
-                        continue
+                except json.decoder.JSONDecodeError as e:
+                    if "Imgur is over capacity!" in r.text:
+                        print("Imgur is over capacity!")
+                        if tries:
+                            time.sleep(sleep)
+                            sleep = sleep * 2
+                            tries -= 1
+                            continue
+                        else:
+                            print("Imgur not responding, upload failed!")
+                            return Done
+                    print("I have no idea what's going on")
+                    print(r.text)
+                    input()
                 print(r.text)
             if not image_id:
                 print("IMGUR TIMED OUT")

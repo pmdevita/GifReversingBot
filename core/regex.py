@@ -25,7 +25,7 @@ class REPatterns:
     reddit_gif = re.compile("^http(?:s)?://i.redd.it/(.*?).gif")
 
     # Reddit Video
-    reddit_vid = re.compile("^http(?:s)?://v.redd.it/(.*)")
+    reddit_vid = re.compile("^http(?:s)?://v.redd.it/(\w+)")
 
     # Streamable
     streamable = re.compile("^http(?:s)?://streamable.com/(.*)")
@@ -37,7 +37,7 @@ class REPatterns:
     link = re.compile("\[.*?\] *\n? *\((.*?)\)")
 
     # Reddit submission link
-    reddit_submission = re.compile("^http(?:s)?://(?:\w+?\.)?reddit.com/r/(?P<subreddit>.*?)/comments/(?P<thread_id>\w{6})/(?P<post_slug>.*?)")
+    reddit_submission = re.compile("^http(?:s)?://(?:\w+?\.)?reddit.com(/r/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/\w+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)([a-zA-Z0-9%&=]+))?$")
 
 if __name__ == '__main__':
     print(REPatterns.reddit_submission.findall("https://www.reddit.com/r/holdmybeer/comments/9nn67x/hmb_while_i_jump_over_this_pole/"))

@@ -11,7 +11,7 @@ from core import constants as consts
 
 def process_comment(reddit, comment):
     # Check if comment is deleted
-    if not comment.author.name:
+    if not comment.author:
         print("Comment doesn't exist????")
         print(vars(comment))
         return

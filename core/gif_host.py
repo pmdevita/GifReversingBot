@@ -47,7 +47,17 @@ class GifHost:
 
     @classmethod
     def open(cls, context, reddit):
+        # Reddit submission -
+        if REPatterns.reddit_submission.findall(context.url):
+            submission = reddit.submission(REPatterns.reddit_submission.findall(context.url)[0][2])
+            if submission.media:
+                # HACK ALERT!!!
+                context.url = submission.media['reddit_video']['fallback_url']
+            else:
+                context.url = submission.url
+
         url = context.url
+
         # Imgur
         if REPatterns.imgur.findall(url):
             return ImgurGif(context)
@@ -126,12 +136,18 @@ class ImgurGif(GifHost):
             return consts.GIF
 
     def upload_video(self, video):
-        return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        response = core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        if not response:
+            response = gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        return response
 
 
     def upload_gif(self, gif):
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
+            response = core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
+            if not response:
+                response = gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
+            return response
         elif self.uploader == consts.GFYCAT:
             return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
 
@@ -149,8 +165,7 @@ class GfycatGif(GifHost):
         duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
         sec = duration % 60
         min = int((duration - sec) / 60)
-        print("duration {}:{}".format(min, sec))
-        print(self.pic)
+        # print("duration {}:{}".format(min, sec))
         if duration < 61:   # TODO: Is it to 61 like Imgur is to 31?
             return consts.VIDEO
         else:
@@ -185,13 +200,12 @@ class RedditVid(GifHost):
         self.id = REPatterns.reddit_vid.findall(self.context.url)[0]
         headers = {"User-Agent": consts.spoof_user_agent}
         # Follow redirect to post URL
-        r = requests.get(self.context.url, headers=headers)
+        r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
         submission_id = REPatterns.reddit_submission.findall(r.url)
         if submission_id:
-            submission = reddit.submission(id=REPatterns.reddit_submission.findall(r.url)[0][1])
+            submission = reddit.submission(id=submission_id[0][2])
             if submission.is_video:
                 self.url = submission.media['reddit_video']['fallback_url']
-                print(self.url)
         else:   # Maybe it was deleted?
             self.id = None
 

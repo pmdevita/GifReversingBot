@@ -24,7 +24,7 @@ def get_url(comment):
 
 def validate_url(url):
     """Validate a URL by checking it against Validators and our regex"""
-    if validators.url(url) and not REPatterns.textpost.match(url):
+    if validators.url(url):
         return url_host(url)
 
 
@@ -43,6 +43,9 @@ def url_host(url):
         return True
     # Streamable
     if REPatterns.streamable.findall(url):
+        return True
+    # Reddit Submission
+    if REPatterns.reddit_submission.findall(url):
         return True
 
     print("Unknown URL Type", url)

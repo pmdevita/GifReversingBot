@@ -11,6 +11,7 @@ from core.secret import secret_process
 credentials = CredentialsLoader().get_credentials()
 
 mode = credentials['general']['mode']
+operator = credentials['general']['operator']
 
 reddit = praw.Reddit(user_agent=consts.user_agent,
                      client_id=credentials['reddit']['client_id'],
@@ -34,7 +35,7 @@ while True:
             else:  # was a message
                 # if message.first_message == "None":
                 #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
-                reddit.redditor("pmdevita").message("Someone messaged me!",
+                reddit.redditor(operator).message("Someone messaged me!",
                                                     "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
 
             reddit.inbox.mark_read([message])
@@ -55,6 +56,6 @@ while True:
 
     except Exception as e:
         if mode == "production":
-            reddit.redditor("pmdevita").message("GRB Error!", "Help I crashed!\n\n    {}".format(
+            reddit.redditor(operator).message("GRB Error!", "Help I crashed!\n\n    {}".format(
                 str(traceback.format_exc()).replace('\n', '\n    ')))
         raise
