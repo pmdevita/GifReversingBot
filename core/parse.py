@@ -29,21 +29,21 @@ def validate_url(url):
 
 
 def url_host(url):
-    # Imgur
-    if REPatterns.imgur.findall(url):
-        return True
-    # Gfycat
-    if REPatterns.gfycat.findall(url):
-        return True
-    # Reddit Gif
-    if REPatterns.reddit_gif.findall(url):
-        return True
+    # # Imgur
+    # if REPatterns.imgur.findall(url):
+    #     return True
+    # # Gfycat
+    # if REPatterns.gfycat.findall(url):
+    #     return True
+    # # Reddit Gif
+    # if REPatterns.reddit_gif.findall(url):
+    #     return True
     # Reddit Vid
     if REPatterns.reddit_vid.findall(url):
         return True
-    # Streamable
-    if REPatterns.streamable.findall(url):
-        return True
+    # # Streamable
+    # if REPatterns.streamable.findall(url):
+    #     return True
     # Reddit Submission
     if REPatterns.reddit_submission.findall(url):
         return True

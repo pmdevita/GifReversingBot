@@ -17,9 +17,10 @@ class StreamableClient:
     def __init__(self):
         creds = CredentialsLoader.get_credentials()['streamable']
         self.auth = (creds['email'], creds['password'])
+        self.headers = {'User-Agent': consts.user_agent}
 
     def download_video(self, id):
-        r = requests.get('https://api.streamable.com/videos/{}'.format(id), auth=self.auth)
+        r = requests.get('https://api.streamable.com/videos/{}'.format(id), headers=self.headers, auth=self.auth)
         return "https:{}".format(r.json()['files']['mp4']['url'])
 
     def upload_file(self, filestream, title):
@@ -31,6 +32,10 @@ class StreamableClient:
             data = {'title': title}
         # m = MultipartEncoder(fields=files)
         print("Uploading to streamable...")
-        r = requests.post('https://api.streamable.com/upload', files=files, data=data, auth=self.auth)
+        r = requests.post('https://api.streamable.com/upload', headers=self.headers, files=files, data=data, auth=self.auth)
         if r.text:
             return Gif(consts.STREAMABLE, r.json()['shortcode'])
+
+    def upload_link(self, link, title):
+        r = requests.get('https://api.streamable.com/import', headers=self.headers, params={'url': link, 'title': title}, auth=self.auth)
+        print(r.text)

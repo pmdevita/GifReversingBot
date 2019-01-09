@@ -19,7 +19,7 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
                      username=credentials['reddit']['username'],
                      password=credentials['reddit']['password'])
 
-print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
+print("vredditshare v{} Ctrl+C to stop".format(consts.version))
 
 while True:
     try:
@@ -56,6 +56,6 @@ while True:
 
     except Exception as e:
         if mode == "production":
-            reddit.redditor(operator).message("GRB Error!", "Help I crashed!\n\n    {}".format(
+            reddit.redditor(operator).message("VRS Error!", "Help I crashed!\n\n    {}".format(
                 str(traceback.format_exc()).replace('\n', '\n    ')))
         raise

@@ -5,6 +5,7 @@ from core.context import CommentContext
 from core.reply import reply
 from core.gif_host import GifHost
 from core.reverse import reverse_mp4, reverse_gif
+from core.concat import concat
 from core.history import check_database, add_to_database
 from core import constants as consts
 
@@ -68,11 +69,17 @@ def process_comment(reddit, comment):
             reversed_gif = gif_host.upload_gif(f)
     # Reverse it as a video
     elif method == consts.VIDEO:
-        with reverse_mp4(BytesIO(r.content), original_gif.audio) as f:
-            reversed_gif = gif_host.upload_video(f)
+        if gif_host.audio:
+            audio = requests.get(gif_host.audio)
+            with concat(BytesIO(r.content), BytesIO(audio.content)) as f:
+                reversed_gif = gif_host.upload_video(f)
+        else:
+            reversed_gif = gif_host.upload_video(BytesIO(r.content))
     # Defer to the object's unique method
     elif method == consts.OTHER:
         reversed_gif = gif_host.reverse()
+    elif method == consts.LINK:
+        reversed_gif = gif_host.upload_link(gif_host.url)
 
     if reversed_gif:
         # Add gif to database

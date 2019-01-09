@@ -1,6 +1,8 @@
-# GifReversingBot
+# vredditshare
 
-Reddit bot that reverses gifs. Currently running under [/u/gifreversingbot](https://reddit.com/user/gifreversingbot).
+Reddit bot that reuploads gifs. Currently running under [/u/vredditshare](https://reddit.com/user/vredditshare).
+
+Forked from GifReversingBot so a lot of stuff still has to be renamed
 
 ## Setup
 
