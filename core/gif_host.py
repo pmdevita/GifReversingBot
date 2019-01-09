@@ -38,6 +38,9 @@ class GifHost:
     def upload_video(self, video):
         raise NotImplemented
 
+    def upload_link(self, link):
+        raise NotImplemented
+
     def get_gif(self):
         """Return info about the gif for checking the db"""
         if self.id:
