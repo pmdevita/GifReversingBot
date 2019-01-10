@@ -215,7 +215,7 @@ def imgurupload(file, type, nsfw=False):
             # image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
             #                        "doesn't work, please report an issue. Thanks!"
             # input()
-            gif = Gif(consts.IMGUR, image_id, url=image_url, log=False, nsfw=nsfw)
+            gif = Gif(consts.IMGUR, image_id, url=image_url, log=True, nsfw=nsfw)
 
         elif type == consts.VIDEO:
             # watch ticket to get link

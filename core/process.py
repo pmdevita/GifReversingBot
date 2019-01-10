@@ -60,6 +60,11 @@ def process_comment(reddit, comment):
 
     r = requests.get(gif_host.url)
 
+    # If we 404, it must not exist
+    if r.status_code == 404:
+        print("Gif not found at URL")
+        return
+
     # Reverse it as a GIF
     if method == consts.GIF:
         # With reversed gif

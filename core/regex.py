@@ -19,7 +19,7 @@ class REPatterns:
     imgur = re.compile("^http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>[a-zA-Z0-9]{5,7})|(?(2)(?P<gallery_id>[a-zA-Z0-9]{5,7})|(?P<image_id>[a-zA-Z0-9]{5,7})))")
 
     # Gfycat
-    gfycat = re.compile("^http(?:s)?://(?:\w+?\.)?gfycat\.com/(?:gifs/detail/)?([a-zA-Z]*)")
+    gfycat = re.compile("^https?://(?:\w+?\.)?gfycat\.com/(?:.*/)?([a-zA-Z]*)")
 
     # Reddit Gif
     reddit_gif = re.compile("^http(?:s)?://i.redd.it/(.*?).gif")
