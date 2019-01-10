@@ -61,21 +61,21 @@ class GifHost:
 
         url = context.url
 
-        # Imgur
-        if REPatterns.imgur.findall(url):
-            return ImgurGif(context)
-        # Gfycat
-        if REPatterns.gfycat.findall(url):
-            return GfycatGif(context)
-        # Reddit Gif
-        if REPatterns.reddit_gif.findall(url):
-            return RedditGif(context)
+        # # Imgur
+        # if REPatterns.imgur.findall(url):
+        #     return ImgurGif(context)
+        # # Gfycat
+        # if REPatterns.gfycat.findall(url):
+        #     return GfycatGif(context)
+        # # Reddit Gif
+        # if REPatterns.reddit_gif.findall(url):
+        #     return RedditGif(context)
         # Reddit Vid
         if REPatterns.reddit_vid.findall(url):
             return RedditVid(context, reddit)
-        # Streamable
-        if REPatterns.streamable.findall(url):
-            return Streamable(context)
+        # # Streamable
+        # if REPatterns.streamable.findall(url):
+        #     return Streamable(context)
 
         print("Unknown URL Type", url)
         return None
@@ -208,42 +208,64 @@ class RedditVid(GifHost):
         if submission_id:
             submission = reddit.submission(id=submission_id[0][2])
             if submission.is_video:
-                self.url = submission.media['reddit_video']['fallback_url']
+                self.video = submission.media['reddit_video']['fallback_url']
+                self.url = self.video
+                self.playlist = submission.media['reddit_video']['hls_url']
+                self.duration = submission.media['reddit_video']['duration']
+                # Does it have audio?
+                r = requests.get("https://v.redd.it/{}/audio".format(self.id))
+                if r.status_code == 200:
+                    self.audio = "https://v.redd.it/{}/audio".format(self.id)
+                else:
+                    self.audio = False
         else:   # Maybe it was deleted?
             self.id = None
 
     def analyze(self):
-        r = requests.get(self.url)
-        duration = get_duration(BytesIO(r.content))
-        if duration <= 30:  # likely uploaded as a mp4, reupload through imgur
-            self.uploader = consts.IMGUR
-            return consts.VIDEO
-        elif duration <= 60: # fallback to gfycat
-            self.uploader = consts.GFYCAT
-            return consts.VIDEO
-        else:  # fallback as a gif, upload to gfycat
-            # I would like to be able to predict a >200MB GIF file size and switch from
-            # Imgur to Gfycat as a result
-            if self.context.nsfw:
+        print(self.video, self.audio)
+        if self.audio:
+            if self.duration < 60:
+                self.url = self.playlist
                 self.uploader = consts.GFYCAT
-                return consts.GIF
-            else:
+                return consts.LINK
+            elif not self.context.nsfw:
                 self.uploader = consts.STREAMABLE
                 return consts.VIDEO
+        else:
+            if self.duration <= 30:  # likely uploaded as a mp4, reupload through imgur
+                self.uploader = consts.IMGUR
+                return consts.VIDEO
+            elif self.duration <= 60: # fallback to gfycat
+                self.uploader = consts.GFYCAT
+                return consts.LINK
+            else:  # fallback as a gif, upload to gfycat
+                # I would like to be able to predict a >200MB GIF file size and switch from
+                # Imgur to Gfycat as a result
+                if self.context.nsfw:
+                    self.uploader = consts.GFYCAT
+                    return consts.GIF
+                else:
+                    self.uploader = consts.STREAMABLE
+                    return consts.VIDEO
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
             return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw, audio=self.audio, description=self.video)
         elif self.uploader == consts.STREAMABLE:
-            return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
+            return streamable.upload_file(video, 'vredditshare - {}'.format(self.get_gif().url))
 
     def upload_gif(self, gif):
         if self.uploader == consts.IMGUR:
             return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
             return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
+
+    def upload_link(self, link):
+        if self.uploader == consts.GFYCAT:
+            return gfycat.upload(link, consts.LINK, nsfw=self.context.nsfw, audio=self.audio, description=self.video)
+
 
 
 class Streamable(GifHost):

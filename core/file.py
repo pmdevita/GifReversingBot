@@ -1,6 +1,6 @@
 import json
 import subprocess
-
+from pprint import pprint
 
 def get_duration(filestream):
     p = subprocess.Popen(
