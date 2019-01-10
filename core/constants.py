@@ -10,9 +10,11 @@ username = CredentialsLoader.get_credentials()['reddit']['username']
 bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
                  "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue)"
 
-nsfw_reply_template = "##NSFW\n\nHere is your gif!\n{}\n\n" + bot_footer
+nsfw_reply_template = "##NSFW\n\n{}\n\n" + bot_footer
 
-reply_template = "Here is your gif!\n{}\n\n" + bot_footer
+# reply_template = "Here is your gif!\n{}\n\n" + bot_footer
+
+reply_template = "{}\n\n" + bot_footer
 
 reply_ban_subject = "Here is your gif!"
 
