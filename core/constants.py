@@ -8,7 +8,7 @@ sleep_time = 90
 username = CredentialsLoader.get_credentials()['reddit']['username']
 
 bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
-                 "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue)"
+                 "(https://www.reddit.com/message/compose/?to=pmdevita&subject=vredditshare%20Issue)"
 
 nsfw_reply_template = "##NSFW\n\n{}\n\n" + bot_footer
 
@@ -19,7 +19,7 @@ reply_template = "{}\n\n" + bot_footer
 reply_ban_subject = "Here is your gif!"
 
 reply_ban_template = "Hi! Unfortunately, I am banned in that subreddit so I couldn't reply to your comment. " \
-                       "I was still able to reverse your gif though!\n{}\n\n" + bot_footer
+                       "I was still able to reupload your gif though!\n{}\n\n" + bot_footer
 
 unnecessary_manual_message = "\n\nJust so you know, you don't have to manually give the gif URL if it is in " \
                              "a parent comment or the post. I would have known what you meant anyways :)\n\n"
