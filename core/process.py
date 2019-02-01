@@ -86,3 +86,13 @@ def process_comment(reddit, comment):
         # Reply
         print("Replying!", reversed_gif.url)
         reply(context, reversed_gif.url)
+
+
+def process_mod_invite(reddit, message):
+    subreddit_name = message.subject[26:]
+    # Sanity
+    if len(subreddit_name) > 2:
+        subreddit = reddit.subreddit(subreddit_name)
+        subreddit.mod.accept_invite()
+        print("Accepted moderatership at", subreddit_name)
+        return subreddit_name

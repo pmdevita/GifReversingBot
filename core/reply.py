@@ -15,9 +15,12 @@ def reply(context: CommentContext, url: str):
     # Format and send the reply
     try:
         if context.nsfw:
-            comment.reply(consts.nsfw_reply_template.format(message))
+            comment = comment.reply(consts.nsfw_reply_template.format(message))
         else:
-            comment.reply(consts.reply_template.format(message))
+            comment = comment.reply(consts.reply_template.format(message))
+        if context.distinguish:
+            comment.mod.distinguish(sticky=True)
+
         print("Successfully reversed and replied!")
     except praw.exceptions.APIException as err:
         error = vars(err)

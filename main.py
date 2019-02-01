@@ -2,11 +2,12 @@ import praw
 import prawcore
 import time
 import traceback
-from core.process import process_comment
+from core.process import process_comment, process_mod_invite
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
 from core import constants as consts
 from core.secret import secret_process
+from pprint import pprint
 
 credentials = CredentialsLoader().get_credentials()
 
@@ -35,10 +36,25 @@ while True:
             else:  # was a message
                 # if message.first_message == "None":
                 #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
-                reddit.redditor(operator).message("Someone messaged me!",
+                if message.subject[:22] == 'invitation to moderate':
+                    subreddit = process_mod_invite(reddit, message)
+                    if subreddit:
+                        reddit.redditor(operator).message("GRB modded!", "GifReversingBot modded in r/{}!".format(subreddit))
+                elif message.subject in consts.ignore_messages:
+                    pass
+                else:
+                    reddit.redditor(operator).message("Someone messaged me!",
                                                     "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
 
             reddit.inbox.mark_read([message])
+
+        # for sub in modded_subs:
+        #     for message in sub.mod.inbox():
+        #         if message.subject == consts.subreddit_mod_summon and message.author.name == "AutoModerator":
+        #             post_id = REPatterns.reddit_submission.findall(message.body)[0][2]
+        #             if post_id:
+        #                 process_comment(reddit, reddit.submission(id=post_id))
+        #                 message.delete()
 
         time.sleep(consts.sleep_time)
 

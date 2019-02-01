@@ -160,6 +160,9 @@ class GfycatGif(GifHost):
         self.pic = gfycat.get_gfycat(self.id)
         # Can't get the full gif file for some reason so we always use mp4?
         self.url = self.pic["gfyItem"]["mp4Url"]
+        if self.url == "":      # If we received no URL, the GIF was brought down or otherwise missing
+            self.id = None
+            print("Gfycat gif missing")
 
     def analyze(self):
         duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
@@ -198,24 +201,28 @@ class RedditVid(GifHost):
         super(RedditVid, self).__init__(context)
         self.uploader = consts.IMGUR
         self.id = REPatterns.reddit_vid.findall(self.context.url)[0]
-        headers = {"User-Agent": consts.spoof_user_agent}
+        self.url = None
+        self.reddit = reddit
+
+
+    def analyze(self):
         # Follow redirect to post URL
+        headers = {"User-Agent": consts.spoof_user_agent}
         r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
         submission_id = REPatterns.reddit_submission.findall(r.url)
         if submission_id:
-            submission = reddit.submission(id=submission_id[0][2])
+            submission = self.reddit.submission(id=submission_id[0][2])
             if submission.is_video:
                 self.url = submission.media['reddit_video']['fallback_url']
-        else:   # Maybe it was deleted?
+        else:  # Maybe it was deleted?
             self.id = None
 
-    def analyze(self):
         r = requests.get(self.url)
         duration = get_duration(BytesIO(r.content))
-        if duration <= 30:  # likely uploaded as a mp4, reupload through imgur
+        if duration < 31:  # likely uploaded as a mp4, reupload through imgur
             self.uploader = consts.IMGUR
             return consts.VIDEO
-        elif duration <= 60: # fallback to gfycat
+        elif duration < 61: # fallback to gfycat
             self.uploader = consts.GFYCAT
             return consts.VIDEO
         else:  # fallback as a gif, upload to gfycat

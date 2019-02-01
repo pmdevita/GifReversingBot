@@ -22,10 +22,33 @@ def get_url(comment):
     return None
 
 
-def validate_url(url):
+def old_validate_url(url):
     """Validate a URL by checking it against Validators and our regex"""
     if validators.url(url):
         return url_host(url)
+
+def extract_url(text):
+    # Imgur
+    if REPatterns.imgur.findall(text):
+        return REPatterns.imgur.findall(text)
+    # Gfycat
+    if REPatterns.gfycat.findall(text):
+        return REPatterns.gfycat.findall(text)
+    # Reddit Gif
+    if REPatterns.reddit_gif.findall(text):
+        return REPatterns.reddit_gif.findall(text)
+    # Reddit Vid
+    if REPatterns.reddit_vid.findall(text):
+        return REPatterns.reddit_vid.findall(text)
+    # Streamable
+    if REPatterns.streamable.findall(text):
+        return REPatterns.streamable.findall(text)
+    # Reddit Submission
+    if REPatterns.reddit_submission.findall(text):
+        return REPatterns.reddit_submission.findall(text)
+
+    # print("Unknown URL Type", text)
+    return False
 
 
 def url_host(url):

@@ -6,6 +6,14 @@ import time
 from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.gif import Gif
+from core.hosts import GifHost
+from core.regex import REPatterns
+
+
+class GfycatHost(GifHost):
+    name = "Gfycat"
+    regex = REPatterns.gfycat
+    url = "https://gfycat.com/{}"
 
 
 class Gfycat:
@@ -110,6 +118,7 @@ class Gfycat:
                 time.sleep(wait)
                 r = requests.get(url)
                 ticket = r.json()
+                print(ticket)
                 if float(ticket.get('progress', 0)) > percentage:
                     percentage = float(ticket['progress'])
                     print(percentage, end=" ")

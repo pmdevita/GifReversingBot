@@ -4,6 +4,15 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.gif import Gif
+from core.hosts import GifHost
+from core.regex import REPatterns
+
+
+class StreamableHost(GifHost):
+    name = "Streamable"
+    regex = REPatterns.streamable
+    url = "https://streamable.com/{}"
+
 
 class StreamableClient:
     instance = None
