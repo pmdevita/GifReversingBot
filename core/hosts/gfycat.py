@@ -24,9 +24,10 @@ class Gfycat:
         self.gfypath = creds["gfypath"]
         self.gfyid = creds["gfycat_id"]
         self.gfysecret = creds["gfycat_secret"]
-
-        self.token = CredentialsLoader.get_credentials()['gfycat'].get('refresh_token', None)
-        self.timeout = int(CredentialsLoader.get_credentials()['gfycat'].get('token_expiration', 0))
+        self.username = creds.get('username', None)
+        self.password = creds.get('password', None)
+        self.token = creds.get('refresh_token', None)
+        self.timeout = int(creds.get('token_expiration', 0))
 
         # self.timeout, self.token = self._load_data()
 
@@ -55,10 +56,15 @@ class Gfycat:
         # If the token has expired, request a new one
         if self.timeout < int(time.time()):
             # For some dumb reason it has to be a string
-            data = "{'grant_type': 'client_credentials', " \
-                   "'client_id': '" + self.gfyid + "','client_secret': '" + self.gfysecret + "'}"
+            data = {"grant_type": "client_credentials", "client_id": self.gfyid,
+                    "client_secret": self.gfysecret}
+            if self.username:
+                data['grant_type'] = 'password'
+                data['username'] = self.username
+                data['password'] = self.password
+
             url = "https://api.gfycat.com/v1/oauth/token"
-            r = requests.post(url, data=data)
+            r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
             try:
                 response = r.json()
             except json.decoder.JSONDecodeError as e:
@@ -74,38 +80,50 @@ class Gfycat:
         headers = {"Authorization": "Bearer {}".format(self.get_token())}
         url = "https://api.gfycat.com/v1/gfycats/{}".format(id)
         r = requests.get(url, headers=headers)
+        if r.status_code != 200:
+            raise Exception("Gfycat - get problem status code {}".format(str(r.status_code)))
         return r.json()
 
-    def upload(self, filestream, media_type, nsfw=False):
+    def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None):
         # If we hit a problem, restart this segment
         tries = 3
         while tries:
             # get gfyname
             url = "https://api.gfycat.com/v1/gfycats"
-            headers = {"Authorization": "Bearer " + self.get_token(), "Content-Type": "application/json"}
+            headers = {"Authorization": "Bearer " + self.get_token(), 'User-Agent': consts.user_agent,
+                       'Content-Type': 'application/json'}
             params = {}
+            if media_type == consts.LINK:
+                params['fetchUrl'] = filestream
+            if description:
+                params['description'] = description
+            if title:
+                params['title'] = title
             if nsfw:
                 params["nsfw"] = 1
-            print("getting gfyname...")
-            r = requests.post(url, headers=headers, data=params)
+            if audio:
+                params['keepAudio'] = True
+            print("getting gfyname...", params)
+            r = requests.post(url, headers=headers, data=str(params))
+            print(r.text)
             metadata = r.json()
 
-
             # upload
-            url = "https://filedrop.gfycat.com"
-            data = {"key": metadata["gfyname"]}
-            if media_type == consts.VIDEO:
-                files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/mp4")}
-            elif media_type == consts.GIF:
-                files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/gif")}
-            m = MultipartEncoder(fields=files)
-            print("uploading...")
-            r = requests.post(url, data=m, headers={'Content-Type': m.content_type})
+            if media_type != consts.LINK:
+                url = "https://filedrop.gfycat.com"
+                if media_type == consts.VIDEO:
+                    files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/mp4")}
+                elif media_type == consts.GIF:
+                    files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/gif")}
+                m = MultipartEncoder(fields=files)
+                print("uploading...")
+                r = requests.post(url, data=m, headers={'Content-Type': m.content_type, 'User-Agent': consts.user_agent})
 
             # check status for gif's id
             url = "https://api.gfycat.com/v1/gfycats/fetch/status/" + metadata["gfyname"]
+            headers = {'User-Agent': consts.user_agent}
             print("waiting for encode...", end=" ")
-            r = requests.get(url)
+            r = requests.get(url, headers=headers)
             try:
                 ticket = r.json()
             except json.decoder.JSONDecodeError as e:
@@ -116,7 +134,7 @@ class Gfycat:
             wait = 7
             while ticket["task"] == "encoding":
                 time.sleep(wait)
-                r = requests.get(url)
+                r = requests.get(url, headers=headers)
                 ticket = r.json()
                 print(ticket)
                 if float(ticket.get('progress', 0)) > percentage:
@@ -127,7 +145,8 @@ class Gfycat:
                 print("Error uploading? Trying again", ticket)
                 tries -= 1
                 if tries:
-                    filestream.seek(0)
+                    if media_type != consts.LINK:
+                        filestream.seek(0)
                     time.sleep(5)
                     continue
                 else:
@@ -143,3 +162,4 @@ class Gfycat:
             return Gif(consts.GFYCAT, image_id, nsfw=nsfw)
         else:
             return None
+

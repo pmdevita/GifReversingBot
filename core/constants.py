@@ -10,6 +10,7 @@ username = CredentialsLoader.get_credentials()['reddit']['username']
 bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
                  "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue)"
 
+
 nsfw_reply_template = "##NSFW\n\nHere is your gif!\n{}\n\n" + bot_footer
 
 reply_template = "Here is your gif!\n{}\n\n" + bot_footer
@@ -27,6 +28,7 @@ ignore_messages = ["Welcome to Moderating!"]
 VIDEO = 1
 GIF = 2
 OTHER = 3
+LINK = 4
 
 GFYCAT = 1
 IMGUR = 2
