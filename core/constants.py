@@ -3,7 +3,7 @@ from core.credentials import CredentialsLoader
 user_agent = "GifReversingBot v{} by /u/pmdevita"
 spoof_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0"
 imgur_spoof_cookie = CredentialsLoader.get_credentials()['imgur']['imgur_cookie']
-version = "2.6.8"
+version = "2.6.9"
 sleep_time = 90
 username = CredentialsLoader.get_credentials()['reddit']['username']
 
@@ -35,3 +35,7 @@ IMGUR = 2
 REDDITGIF = 3
 REDDITVIDEO = 4
 STREAMABLE = 5
+
+SUCCESS = 0         # Reverse and upload succeeded
+USER_FAILURE = 1    # Something about the user's request doesn't make sense (ignore it)
+UPLOAD_FAILURE = 2  # The gif failed to upload (try again later)

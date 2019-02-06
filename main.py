@@ -6,6 +6,7 @@ from core.process import process_comment, process_mod_invite
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
 from core import constants as consts
+from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from core.secret import secret_process
 from pprint import pprint
 
@@ -22,17 +23,34 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 
 print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
+mark_read = []
+failure = False
+failure_counter = 1  # 1 by default since it is the wait timer multiplier
+
 while True:
     try:
+        # for all unread messages
         for message in reddit.inbox.unread():
+            # for all unread comments
             if message.was_comment:
+                result = None
+                # username mentions are simple
                 if message.subject == "username mention":
-                    process_comment(reddit, reddit.comment(message.id))
+                    result = process_comment(reddit, reddit.comment(message.id))
+                # if it was a reply, check to see if it contained a summon
                 elif message.subject == "comment reply" or message.subject == "post reply":
                     if REPatterns.reply_mention.findall(message.body):
-                        process_comment(reddit, reddit.comment(message.id))
+                        result = process_comment(reddit, reddit.comment(message.id))
                     else:
                         secret_process(reddit, message)
+                # Depending on success or other outcomes, we mark the message read
+                if result == SUCCESS or result == USER_FAILURE:
+                    mark_read.append(message)
+                # If the upload failed, try again later
+                elif result == UPLOAD_FAILURE:
+                    failure = True
+                else:
+                    mark_read.append(message)
             else:  # was a message
                 # if message.first_message == "None":
                 #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
@@ -44,9 +62,15 @@ while True:
                     pass
                 else:
                     reddit.redditor(operator).message("Someone messaged me!",
-                                                    "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
+                                                      "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
+                mark_read.append(message)
 
-            reddit.inbox.mark_read([message])
+        reddit.inbox.mark_read(mark_read)
+        mark_read.clear()
+        if failure:
+            failure_counter += 1
+        else:
+            failure_counter = 1
 
         # for sub in modded_subs:
         #     for message in sub.mod.inbox():
@@ -56,7 +80,7 @@ while True:
         #                 process_comment(reddit, reddit.submission(id=post_id))
         #                 message.delete()
 
-        time.sleep(consts.sleep_time)
+        time.sleep(consts.sleep_time * failure_counter)
 
     except prawcore.exceptions.ResponseException as e:   # Something funky happened
         print("Did a comment go missing?", e, vars(e))

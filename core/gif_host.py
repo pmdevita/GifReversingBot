@@ -55,7 +55,10 @@ class GifHost:
             submission = reddit.submission(REPatterns.reddit_submission.findall(context.url)[0][2])
             if submission.media:
                 # HACK ALERT!!!
-                context.url = submission.media['reddit_video']['fallback_url']
+                if submission.media.get('reddit_video', False):
+                    context.url = submission.media['reddit_video']['fallback_url']
+                else:
+                    context.url = submission.url
             else:
                 context.url = submission.url
 
