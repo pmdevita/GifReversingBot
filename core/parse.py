@@ -2,30 +2,11 @@ import validators
 import re
 from core.regex import REPatterns
 
-
-def get_url(comment):
-    """Retrieve a URL from a comment"""
-    tokens = comment.body.split()
-
-    if len(tokens) >= 2:  # first check for direct request
-        for i in tokens:
-            if validate_url(i):
-                return i
-    if comment.is_root:
-        if validate_url(comment.submission.url):
-            return comment.submission.url
-    else:
-        for i in getcommentparent(comment).body.split():
-            if validate_url(i):
-                return i
-
-    return None
-
-
 def old_validate_url(url):
     """Validate a URL by checking it against Validators and our regex"""
     if validators.url(url):
         return url_host(url)
+
 
 def extract_url(text):
     # Imgur
@@ -45,6 +26,8 @@ def extract_url(text):
         return REPatterns.streamable.findall(text)
     # Reddit Submission
     if REPatterns.reddit_submission.findall(text):
+        return REPatterns.reddit_submission.findall(text)
+    if REPatterns.link_gif.findall(text):
         return REPatterns.reddit_submission.findall(text)
 
     # print("Unknown URL Type", text)
@@ -69,6 +52,8 @@ def url_host(url):
         return True
     # Reddit Submission
     if REPatterns.reddit_submission.findall(url):
+        return True
+    if REPatterns.link_gif.findall(url):
         return True
 
     print("Unknown URL Type", url)

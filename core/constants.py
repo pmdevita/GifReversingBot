@@ -35,6 +35,7 @@ IMGUR = 2
 REDDITGIF = 3
 REDDITVIDEO = 4
 STREAMABLE = 5
+LINKGIF = 6
 
 SUCCESS = 0         # Reverse and upload succeeded
 USER_FAILURE = 1    # Something about the user's request doesn't make sense (ignore it)

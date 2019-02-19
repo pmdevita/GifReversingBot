@@ -63,5 +63,7 @@ class Gif:
         elif host == consts.STREAMABLE:
             self.url = "https://streamable.com/{}".format(id)
             self.audio = True
+        elif host == consts.LINKGIF:
+            self.url = id
         else:
             self.url = None

@@ -24,11 +24,14 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
 mark_read = []
-failure = False
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
 
 while True:
     try:
+        failure = False
+        if mark_read:   # Needed to clear after a Reddit disconnection error
+            reddit.inbox.mark_read(mark_read)
+            mark_read.clear()
         # for all unread messages
         for message in reddit.inbox.unread():
             # for all unread comments
@@ -49,6 +52,7 @@ while True:
                 # If the upload failed, try again later
                 elif result == UPLOAD_FAILURE:
                     failure = True
+                    print("Upload failed, not removing from queue")
                 else:
                     mark_read.append(message)
             else:  # was a message
@@ -68,6 +72,7 @@ while True:
         reddit.inbox.mark_read(mark_read)
         mark_read.clear()
         if failure:
+            print("An upload failed, extending wait")
             failure_counter += 1
         else:
             failure_counter = 1
@@ -91,10 +96,12 @@ while True:
         time.sleep(consts.sleep_time * 2)
 
     except KeyboardInterrupt:
+        reddit.inbox.mark_read(mark_read)
         print("Exiting...")
         break
 
     except Exception as e:
+        reddit.inbox.mark_read(mark_read)
         if mode == "production":
             reddit.redditor(operator).message("GRB Error!", "Help I crashed!\n\n    {}".format(
                 str(traceback.format_exc()).replace('\n', '\n    ')))

@@ -109,7 +109,7 @@ class Gfycat:
                 params['keepAudio'] = True
             print("getting gfyname...", params)
             r = requests.post(url, headers=headers, data=str(params))
-            print(r.text)
+            # print(r.text)
             metadata = r.json()
 
             # upload
@@ -140,7 +140,7 @@ class Gfycat:
                     time.sleep(WAIT)
                     r = requests.get(url, headers=headers)
                     ticket = r.json()
-                    print(ticket)
+                    # print(ticket)
                     if float(ticket.get('progress', 0)) > percentage:
                         percentage = float(ticket['progress'])
                         print(percentage, end=" ")

@@ -25,6 +25,7 @@ class GifHost:
 
     def __init__(self, context):
         self.context = context
+        self.url = None
 
     def analyze(self):
         raise NotImplemented
@@ -79,6 +80,9 @@ class GifHost:
         # Streamable
         if REPatterns.streamable.findall(url):
             return Streamable(context)
+        # LinkGif
+        if REPatterns.link_gif.findall(url):
+            return LinkGif(context)
 
         print("Unknown URL Type", url)
         return None
@@ -111,10 +115,9 @@ class ImgurGif(GifHost):
             self.pic = imgur.get_image(self.id)  # take first image from gallery album
 
         except ImgurClientError as e:
-            print("Imgur returned 404, deleted image?")
-            if e.status_code == 404:
-                self.pic = None
-                self.id = None
+            print("Imgur returned 404, deleted image?", e.status_code)
+            self.pic = None
+            self.id = None
 
     def analyze(self):
         """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
@@ -130,7 +133,8 @@ class ImgurGif(GifHost):
         # If under a certain duration, it was likely uploaded as an mp4 (and it's easier
         # for us to reverse it that way anyways)
         if duration < 31:  # Interestingly, imgur appears to allow mp4s under 31 seconds
-            self.url = self.pic.mp4  # (rather than capping at 30 like they advertise)
+            # self.url = self.pic.mp4  # (rather than capping at 30 like they advertise)
+            self.url = r
             return consts.VIDEO
         else:               # has to have been a gif
             self.url = self.pic.gifv[:-1]
@@ -186,6 +190,7 @@ class GfycatGif(GifHost):
     def upload_video(self, video):
         return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
 
+
 class RedditGif(GifHost):
     type = consts.REDDITGIF
 
@@ -210,7 +215,6 @@ class RedditVid(GifHost):
         self.url = None
         self.reddit = reddit
 
-
     def analyze(self):
         # Follow redirect to post URL
         headers = {"User-Agent": consts.spoof_user_agent}
@@ -224,6 +228,7 @@ class RedditVid(GifHost):
             self.id = None
 
         r = requests.get(self.url)
+        self.url = r
         duration = get_duration(BytesIO(r.content))
         if duration < 31:  # likely uploaded as a mp4, reupload through imgur
             self.uploader = consts.IMGUR
@@ -233,13 +238,16 @@ class RedditVid(GifHost):
             return consts.VIDEO
         else:  # fallback as a gif, upload to gfycat
             # I would like to be able to predict a >200MB GIF file size and switch from
+            self.uploader = consts.GFYCAT
+            return consts.GIF
+            # Code for streamable functionality
             # Imgur to Gfycat as a result
-            if self.context.nsfw:
-                self.uploader = consts.GFYCAT
-                return consts.GIF
-            else:
-                self.uploader = consts.STREAMABLE
-                return consts.VIDEO
+            # if self.context.nsfw:
+            #     self.uploader = consts.GFYCAT
+            #     return consts.GIF
+            # else:
+            #     self.uploader = consts.STREAMABLE
+            #     return consts.VIDEO
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
@@ -262,24 +270,82 @@ class Streamable(GifHost):
     def __init__(self, context):
         super(Streamable, self).__init__(context)
         self.id = REPatterns.streamable.findall(self.context.url)[0]
-
-    @property
-    def url(self):
-        return streamable.download_video(self.id)
+        if self.id:
+            self.url = streamable.download_video(self.id)
+        else:
+            self.url = None
 
     def analyze(self):
-        return consts.VIDEO
+        r = requests.get(self.url)
+        self.url = r
+        duration = get_duration(BytesIO(r))
+        if duration < 31:
+            self.uploader = consts.IMGUR
+            return consts.VIDEO
+        elif duration < 61:
+            self.uploader = consts.GFYCAT
+            return consts.VIDEO
+        else:
+            return None
 
     def upload_video(self, video):
-        return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
+        # return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
+
+        if self.uploader == consts.IMGUR:
+            return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        elif self.uploader == consts.GFYCAT:
+            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        elif self.uploader == consts.STREAMABLE:
+            return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
 
 
 
 class LinkGif(GifHost):
-    pass
+    type = consts.LINKGIF
 
-def get_gif_size(url):
+    def __init__(self, context):
+        super().__init__(context)
+        self.id = self.context.url
+        self.uploader = None
+
+    def analyze(self):
+        # Is gif an acceptable size?
+        size = get_gif_size(self.id, 400)
+        # Is it a gif?
+        r = requests.get(self.id)
+        header = r.content[:3]
+        if header != b'GIF':
+            return None
+
+        if size:
+            if size <= 200:
+                self.uploader = consts.IMGUR
+            else:
+                self.uploader = consts.GFYCAT
+            self.url = r
+            return consts.GIF
+        else:
+            self.id = None
+            return None
+
+    def upload_gif(self, gif):
+        if self.uploader == consts.IMGUR:
+            return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
+        elif self.uploader == consts.GFYCAT:
+            return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
+
+
+
+
+def get_gif_size(url, max=None):
     """Returns size in MB"""
+    if max:
+        max_bytes = max * 1000000
+    size = 0
     with requests.get(url, stream=True) as r:
-        size = sum(len(chunk) for chunk in r.iter_content(8196))
+        for chunk in r.iter_content(8196):
+            size += len(chunk)
+            if max:
+                if size > max_bytes:
+                    return False
     return size / 1000000

@@ -59,7 +59,10 @@ def process_comment(reddit, comment):
 
     reversed_gif = None
 
-    r = requests.get(gif_host.url)
+    if isinstance(gif_host.url, str):
+        r = requests.get(gif_host.url)
+    elif isinstance(gif_host.url, requests.Response):
+        r = gif_host.url
 
     # If we 404, it must not exist
     if r.status_code == 404:
