@@ -8,39 +8,54 @@ from imgurpython.client import API_URL
 from imgurpython.client import AuthWrapper as pAuthWrapper
 from imgurpython.helpers.error import ImgurClientError
 from requests_toolbelt import MultipartEncoder
+from imgurpython.imgur.models.gallery_image import GalleryImage
 
 from core import constants as consts
-from core.gif import Gif
+from core.gif import Gif as OldGif
 from core.credentials import CredentialsLoader
-from core.hosts import GifHost
+from core.hosts import GifHost, Gif
+from core.regex import REPatterns
+
 
 class ImgurHost(GifHost):
-    regex = re.compile("^http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>.{7})|(?(2)(?P<gallery_id>.{7})|(?P<image_id>.{7})))")
+    name = "Imgur"
+    regex = REPatterns.imgur
     url = "https://imgur.com/{}.gifv"
 
-    def get_id(self):
-        self.uploader = consts.IMGUR
+    @classmethod
+    def get_id(cls, regex):
+        imgur = ImgurClient.get()
         # Retrieve the ID
-        imgur_match = REPatterns.imgur.findall(self.context.url)[0]
+        imgur_match = regex[0]
         if imgur_match[4]:  # Image match
-            self.id = imgur_match[4]
+            id = imgur_match[4]
         elif imgur_match[3]:  # Gallery match
             gallery = imgur.gallery_item(imgur_match[3])
             if not isinstance(gallery, GalleryImage):
-                self.id = gallery.images[0]['id']
+                id = gallery.images[0]['id']
             else:
-                self.id = gallery.id
+                id = gallery.id
         elif imgur_match[2]:  # Album match
             album = imgur.get_album(imgur_match[2])
-            self.id = album.images[0]['id']
+            id = album.images[0]['id']
 
         try:
-            self.pic = imgur.get_image(self.id)  # take first image from gallery album
+            pic = imgur.get_image(id)  # take first image from gallery album
         except ImgurClientError as e:
             print("Imgur returned 404, deleted image?")
             if e.status_code == 404:
-                self.pic = None
-                self.id = None
+                return None
+
+        return id
+
+    @classmethod
+    def get_gif(cls, id=None, regex=None, url=None):
+        if url:
+            regex = cls.regex.findall(url)
+        if regex:
+            gif_id = cls.get_id(regex)
+        if gif_id:
+            return Gif(cls, gif_id, cls.url.format(gif_id))
 
 class ImgurClient(pImgurClient):
     instance = None
@@ -185,6 +200,7 @@ def imgurupload(file, type, nsfw=False):
         if type == consts.GIF:
             image_id = upload["data"]["hash"]
             image_url = "https://i.imgur.com/{}.gifv".format(image_id)
+            final_url = None
 
             # Did the upload actually publish?
             headers = {"User-Agent": consts.spoof_user_agent}
@@ -195,6 +211,7 @@ def imgurupload(file, type, nsfw=False):
                 print("GIFV DID NOT GENERATE")
                 # Try gif URL
                 image_url = "https://i.imgur.com/{}.gif".format(image_id)
+                final_url = image_url
                 headers = {"User-Agent": consts.spoof_user_agent}
                 # Follow redirect to post URL
                 r = requests.get(image_url, headers=headers)
@@ -215,7 +232,7 @@ def imgurupload(file, type, nsfw=False):
             # image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
             #                        "doesn't work, please report an issue. Thanks!"
             # input()
-            gif = Gif(consts.IMGUR, image_id, url=image_url, log=False, nsfw=nsfw)
+            gif = OldGif(consts.IMGUR, image_id, url=final_url, log=True, nsfw=nsfw)
 
         elif type == consts.VIDEO:
             # watch ticket to get link
@@ -288,7 +305,7 @@ def imgurupload(file, type, nsfw=False):
 
             # TODO: once gif uploading is fixed, unindent this
             # image_url = "https://imgur.com/{}.gifv".format(image_id)
-            gif = Gif(consts.IMGUR, image_id, nsfw=nsfw)
+            gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
         return gif
 

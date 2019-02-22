@@ -1,4 +1,5 @@
 class GifHost:
+    name = None
     type = None
     regex = None
     url = None
@@ -25,27 +26,21 @@ class GifHost:
     def upload_video(self, video):
         raise NotImplemented
 
-    def get_gif(self):
-        """Return info about the gif for checking the db"""
-        if self.id:
-            return Gif(self, self.id, nsfw=self.context.nsfw)
-        else:
-            return None
+    @classmethod
+    def get_gif(cls, id=None, regex=None, url=None):
+        if url:
+            regex = cls.regex.findall(url)
+        if regex:
+            gif_id = regex[0]
+        if gif_id:
+            return Gif(cls, gif_id, cls.url.format(gif_id))
 
 
 class Gif:
-    def __init__(self, host, id, url=None, log=True, nsfw=False):
+    def __init__(self, host, id, url):
         self.host = host
         self.id = id
-        # Do we log this gif in the db?
-        self.log = log
-        self.audio = False
+        self.url = url
 
-        self.nsfw = nsfw
-
-        if url:
-            self.url = url
-        elif id:
-            self.url = host.url.format(id)
-        else:
-            self.url = None
+    def __repr__(self):
+        return "{}-{}".format(self.host.name, self.id)

@@ -2,10 +2,22 @@ import json
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import time
+from math import ceil
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.gif import Gif
+from core.hosts import GifHost
+from core.regex import REPatterns
+
+ENCODE_TIMEOUT = 3200
+WAIT = 7
+ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
+
+class GfycatHost(GifHost):
+    name = "Gfycat"
+    regex = REPatterns.gfycat
+    url = "https://gfycat.com/{}"
 
 
 class Gfycat:
@@ -97,7 +109,7 @@ class Gfycat:
                 params['keepAudio'] = True
             print("getting gfyname...", params)
             r = requests.post(url, headers=headers, data=str(params))
-            print(r.text)
+            # print(r.text)
             metadata = r.json()
 
             # upload
@@ -123,17 +135,30 @@ class Gfycat:
                 raise
             # Sometimes we have to wait
             percentage = 0
-            wait = 7
-            while ticket["task"] == "encoding":
-                time.sleep(wait)
-                r = requests.get(url, headers=headers)
-                ticket = r.json()
-                if float(ticket.get('progress', 0)) > percentage:
-                    percentage = float(ticket['progress'])
-                    print(percentage, end=" ")
+            for i in range(ENCODE_LOOPS):
+                if ticket["task"] == "encoding":
+                    time.sleep(WAIT)
+                    r = requests.get(url, headers=headers)
+                    ticket = r.json()
+                    # print(ticket)
+                    if float(ticket.get('progress', 0)) > percentage:
+                        percentage = float(ticket['progress'])
+                        print(percentage, end=" ")
+                else:
+                    break
             # If there was something wrong, we loop back and try again
             if ticket["task"] == "NotFoundo" or ticket["task"] == "error":
                 print("Error uploading? Trying again", ticket)
+                tries -= 1
+                if tries:
+                    if media_type != consts.LINK:
+                        filestream.seek(0)
+                    time.sleep(5)
+                    continue
+                else:
+                    break
+            elif ticket['task'] == 'encoding':
+                print("Upload timed out? Trying again", ticket)
                 tries -= 1
                 if tries:
                     if media_type != consts.LINK:
@@ -153,4 +178,3 @@ class Gfycat:
             return Gif(consts.GFYCAT, image_id, nsfw=nsfw)
         else:
             return None
-

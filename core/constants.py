@@ -24,6 +24,7 @@ reply_ban_template = "Hi! Unfortunately, I am banned in that subreddit so I coul
 unnecessary_manual_message = "\n\nJust so you know, you don't have to manually give the gif URL if it is in " \
                              "a parent comment or the post. I would have known what you meant anyways :)\n\n"
 
+ignore_messages = ["Welcome to Moderating!"]
 
 VIDEO = 1
 GIF = 2
@@ -35,3 +36,8 @@ IMGUR = 2
 REDDITGIF = 3
 REDDITVIDEO = 4
 STREAMABLE = 5
+LINKGIF = 6
+
+SUCCESS = 0         # Reverse and upload succeeded
+USER_FAILURE = 1    # Something about the user's request doesn't make sense (ignore it)
+UPLOAD_FAILURE = 2  # The gif failed to upload (try again later)

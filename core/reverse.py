@@ -128,9 +128,9 @@ def reverse_mp4(mp4, audio=False):
     """
     print("Reversing mp4...")
 
-    mute = ["ffmpeg", "-loglevel", "panic", "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
+    mute = ["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
             "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
-    sound = ["ffmpeg", "-loglevel", "panic", "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
+    sound = ["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
              "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
 
     if audio:
@@ -138,8 +138,20 @@ def reverse_mp4(mp4, audio=False):
     else:
         command = mute
 
-    p = subprocess.Popen(command, stdin=subprocess.PIPE)
-    response = p.communicate(input=mp4.read())
+    p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    response = p.communicate(input=mp4.read())[0].decode()
+
+    # Weird thing
+    if "partial file" in response:
+        print("FFMPEG gave weird error, putting in file to reverse")
+        command[4] = "source.mp4"
+        mp4.seek(0)
+        with open("source.mp4", 'wb') as f:
+            f.write(mp4.read())
+
+        p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        response = p.communicate()[0].decode()
+        os.remove("source.mp4")
 
     reversed = open("temp.mp4", "rb")
 

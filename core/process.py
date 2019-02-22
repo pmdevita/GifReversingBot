@@ -8,6 +8,7 @@ from core.reverse import reverse_mp4, reverse_gif
 from core.concat import concat, vid_to_gif
 from core.history import check_database, add_to_database
 from core import constants as consts
+from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 
 
 def process_comment(reddit, comment):
@@ -15,7 +16,7 @@ def process_comment(reddit, comment):
     if not comment.author:
         print("Comment doesn't exist????")
         print(vars(comment))
-        return
+        return USER_FAILURE
 
     print("New request by " + comment.author.name)
 
@@ -23,11 +24,11 @@ def process_comment(reddit, comment):
     context = CommentContext(reddit, comment)
     if not context.url:         # Did our search return nothing?
         print("Didn't find a URL")
-        return
+        return USER_FAILURE
 
     if context.rereverse:           # Is the user asking to rereverse?
         reply(context, context.url)
-        return
+        return SUCCESS
 
     # Create object to grab gif from host
     print(context.url)
@@ -35,12 +36,12 @@ def process_comment(reddit, comment):
 
     # If the link was not recognized, return
     if not gif_host:
-        return
+        return USER_FAILURE
 
     # If the gif was unable to be acquired, return
     original_gif = gif_host.get_gif()
     if not original_gif:
-        return
+        return USER_FAILURE
 
     # Check database for gif before we reverse it
     gif = check_database(original_gif)
@@ -48,18 +49,26 @@ def process_comment(reddit, comment):
     # If it was in the database, reuse it
     if gif:
         reply(context, gif.url)
-        return
+        return SUCCESS
 
     # Analyze how the gif should be reversed
     method = gif_host.analyze()
 
     # If there was some problem analyzing, exit
     if not method:
-        return
+        return USER_FAILURE
 
     reversed_gif = None
 
-    r = requests.get(gif_host.url)
+    if isinstance(gif_host.url, str):
+        r = requests.get(gif_host.url)
+    elif isinstance(gif_host.url, requests.Response):
+        r = gif_host.url
+
+    # If we 404, it must not exist
+    if r.status_code == 404:
+        print("Gif not found at URL")
+        return USER_FAILURE
 
     # Reverse it as a GIF
     if method == consts.GIF:
@@ -88,3 +97,16 @@ def process_comment(reddit, comment):
         # Reply
         print("Replying!", reversed_gif.url)
         reply(context, reversed_gif.url)
+        return SUCCESS
+    else:
+        return UPLOAD_FAILURE
+
+
+def process_mod_invite(reddit, message):
+    subreddit_name = message.subject[26:]
+    # Sanity
+    if len(subreddit_name) > 2:
+        subreddit = reddit.subreddit(subreddit_name)
+        subreddit.mod.accept_invite()
+        print("Accepted moderatership at", subreddit_name)
+        return subreddit_name
