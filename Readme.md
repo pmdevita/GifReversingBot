@@ -40,6 +40,8 @@ password = password
 
 ```
 
+From there run `python main.py` from the root directory to start. GifReversingBot requires Python 3.6+.
+
 You will also need [`FFmpeg`](http://ffmpeg.org/), [`FFprobe`](http://ffmpeg.org/), and [`gifski`](https://gif.ski/) 
 binaries on the path or in the same directory. 
 

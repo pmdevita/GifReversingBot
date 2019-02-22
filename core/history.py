@@ -64,8 +64,13 @@ creds = CredentialsLoader.get_credentials()['database']
 if creds['type'] == 'sqlite':
     db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
 elif creds['type'] == 'mysql':
-    db.bind(provider="mysql", host=creds['host'], user=creds['username'], passwd=creds['password'],
-            db=creds['database'])
+    # Check for SSL arguments
+    ssl = {}
+    if creds.get('ssl-ca', None):
+        ssl['ssl'] = {'ca': creds['ssl-ca'], 'key': creds['ssl-key'], 'cert': creds['ssl-cert']}
+
+    db.bind(provider="mysql", host=creds['host'], user=creds['username'], password=creds['password'],
+            db=creds['database'], ssl=ssl, port=int(creds.get('port', 3306)))
 else:
     raise Exception("No database configuration")
 

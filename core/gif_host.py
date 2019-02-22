@@ -225,7 +225,7 @@ class RedditVid(GifHost):
             if submission.is_video:
                 self.url = submission.media['reddit_video']['fallback_url']
         else:  # Maybe it was deleted?
-            self.id = None
+            return None
 
         r = requests.get(self.url)
         self.url = r

@@ -10,7 +10,7 @@ from core.gif import Gif
 from core.hosts import GifHost
 from core.regex import REPatterns
 
-ENCODE_TIMEOUT = 900
+ENCODE_TIMEOUT = 3200
 WAIT = 7
 ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
 

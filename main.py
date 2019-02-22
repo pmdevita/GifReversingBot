@@ -1,5 +1,6 @@
 import praw
 import prawcore
+from requests.exceptions import ConnectionError
 import time
 import traceback
 from core.process import process_comment, process_mod_invite
@@ -99,6 +100,10 @@ while True:
         reddit.inbox.mark_read(mark_read)
         print("Exiting...")
         break
+
+    except ConnectionError:
+        print('A connection was unable to be established')
+        time.sleep(consts.sleep_time * 2)
 
     except Exception as e:
         reddit.inbox.mark_read(mark_read)
