@@ -5,7 +5,7 @@ from core.context import CommentContext
 from core.reply import reply
 from core.gif_host import GifHost
 from core.reverse import reverse_mp4, reverse_gif
-from core.concat import concat
+from core.concat import concat, vid_to_gif
 from core.history import check_database, add_to_database
 from core import constants as consts
 
@@ -64,7 +64,7 @@ def process_comment(reddit, comment):
     # Reverse it as a GIF
     if method == consts.GIF:
         # With reversed gif
-        with reverse_gif(BytesIO(r.content)) as f:
+        with vid_to_gif(BytesIO(r.content)) as f:
             # Give to gif_host's uploader
             reversed_gif = gif_host.upload_gif(f)
     # Reverse it as a video

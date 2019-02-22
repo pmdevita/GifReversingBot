@@ -228,9 +228,13 @@ class RedditVid(GifHost):
                 self.url = self.playlist
                 self.uploader = consts.GFYCAT
                 return consts.LINK
-            elif not self.context.nsfw:
-                self.uploader = consts.STREAMABLE
-                return consts.VIDEO
+            # Streamable say no
+            # elif not self.context.nsfw:
+            #     self.uploader = consts.STREAMABLE
+            #     return consts.VIDEO
+            else:
+                print("NSFW video/audio over 60 seconds, nowhere to upload")
+                return None
         else:
             if self.duration <= 30:  # likely uploaded as a mp4, reupload through imgur
                 self.uploader = consts.IMGUR
@@ -239,14 +243,16 @@ class RedditVid(GifHost):
                 self.uploader = consts.GFYCAT
                 return consts.LINK
             else:  # fallback as a gif, upload to gfycat
+                self.uploader = consts.GFYCAT
+                return consts.GIF
                 # I would like to be able to predict a >200MB GIF file size and switch from
                 # Imgur to Gfycat as a result
-                if self.context.nsfw:
-                    self.uploader = consts.GFYCAT
-                    return consts.GIF
-                else:
-                    self.uploader = consts.STREAMABLE
-                    return consts.VIDEO
+                # if self.context.nsfw:
+                #     self.uploader = consts.GFYCAT
+                #     return consts.GIF
+                # else:
+                #     self.uploader = consts.STREAMABLE
+                #     return consts.VIDEO
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
