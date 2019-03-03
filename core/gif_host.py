@@ -11,7 +11,7 @@ from core.hosts.imgur import ImgurClient
 from core.hosts.gfycat import Gfycat as GfycatClient
 from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
-from core.file import get_duration
+from core.file import get_duration, get_fps
 
 
 creds = CredentialsLoader.get_credentials()
@@ -135,7 +135,7 @@ class ImgurGif(GifHost):
         if duration < 31:  # Interestingly, imgur appears to allow mp4s under 31 seconds
             # self.url = self.pic.mp4  # (rather than capping at 30 like they advertise)
             self.url = r
-            return consts.VIDEO
+            return consts.MP4, consts.MP4
         else:               # has to have been a gif
             self.url = self.pic.gifv[:-1]
             size = get_gif_size(self.url)
@@ -143,12 +143,12 @@ class ImgurGif(GifHost):
             # Due to gifski bloat, we may need to redirect to gfycat
             if size > 175:
                 self.uploader = consts.GFYCAT
-            return consts.GIF
+            return consts.GIF, consts.GIF
 
     def upload_video(self, video):
-        response = core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        response = core.hosts.imgur.imgurupload(video, consts.MP4, nsfw=self.context.nsfw)
         if not response:
-            response = gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            response = gfycat.upload(video, consts.MP4, nsfw=self.context.nsfw)
         return response
 
 
@@ -169,7 +169,7 @@ class GfycatGif(GifHost):
         self.id = REPatterns.gfycat.findall(context.url)[0]
         self.pic = gfycat.get_gfycat(self.id)
         # Can't get the full gif file for some reason so we always use mp4?
-        self.url = self.pic["gfyItem"]["mp4Url"]
+        self.url = self.pic["gfyItem"]["webmUrl"]
         if self.url == "":      # If we received no URL, the GIF was brought down or otherwise missing
             self.id = None
             print("Gfycat gif missing")
@@ -179,16 +179,16 @@ class GfycatGif(GifHost):
         sec = duration % 60
         min = int((duration - sec) / 60)
         # print("duration {}:{}".format(min, sec))
-        if duration < 61:   # TODO: Is it to 61 like Imgur is to 31?
-            return consts.VIDEO
+        if duration < 60:   # This has been verified now
+            return consts.WEBM, consts.WEBM
         else:
-            return consts.GIF
+            return consts.WEBM, consts.GIF
 
     def upload_gif(self, gif):
         return gfycat.upload(gif, consts.GIF, nsfw=self.context.nsfw)
 
     def upload_video(self, video):
-        return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+        return gfycat.upload(video, consts.MP4, nsfw=self.context.nsfw)
 
 
 class RedditGif(GifHost):
@@ -200,7 +200,7 @@ class RedditGif(GifHost):
         self.url = context.url
 
     def analyze(self):
-        return consts.GIF
+        return consts.GIF, consts.GIF
 
     def upload_gif(self, gif):
         return core.hosts.imgur.imgurupload(gif, consts.GIF)
@@ -230,16 +230,21 @@ class RedditVid(GifHost):
         r = requests.get(self.url)
         self.url = r
         duration = get_duration(BytesIO(r.content))
+        fps = get_fps(BytesIO(r.content))
         if duration < 31:  # likely uploaded as a mp4, reupload through imgur
             self.uploader = consts.IMGUR
-            return consts.VIDEO
+            return consts.MP4, consts.MP4
         elif duration < 61: # fallback to gfycat
             self.uploader = consts.GFYCAT
-            return consts.VIDEO
-        else:  # fallback as a gif, upload to gfycat
+            return consts.MP4, consts.WEBM
+        elif fps * duration < 6000:  # fallback as a gif, upload to gfycat
             # I would like to be able to predict a >200MB GIF file size and switch from
             self.uploader = consts.GFYCAT
-            return consts.GIF
+            return consts.MP4, consts.GIF
+        else:
+            print("{} frames, too big to create gif".format(fps * duration))
+            return None, None
+
             # Code for streamable functionality
             # Imgur to Gfycat as a result
             # if self.context.nsfw:
@@ -251,9 +256,9 @@ class RedditVid(GifHost):
 
     def upload_video(self, video):
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            return core.hosts.imgur.imgurupload(video, consts.MP4, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            return gfycat.upload(video, consts.WEBM, nsfw=self.context.nsfw)
         elif self.uploader == consts.STREAMABLE:
             return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
 
@@ -278,23 +283,23 @@ class Streamable(GifHost):
     def analyze(self):
         r = requests.get(self.url)
         self.url = r
-        duration = get_duration(BytesIO(r))
+        duration = get_duration(BytesIO(r.content))
         if duration < 31:
             self.uploader = consts.IMGUR
-            return consts.VIDEO
+            return consts.MP4, consts.MP4
         elif duration < 61:
             self.uploader = consts.GFYCAT
-            return consts.VIDEO
+            return consts.MP4, consts.MP4
         else:
-            return None
+            return None, None
 
     def upload_video(self, video):
         # return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
 
         if self.uploader == consts.IMGUR:
-            return core.hosts.imgur.imgurupload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            return core.hosts.imgur.imgurupload(video, consts.MP4, nsfw=self.context.nsfw)
         elif self.uploader == consts.GFYCAT:
-            return gfycat.upload(video, consts.VIDEO, nsfw=self.context.nsfw)
+            return gfycat.upload(video, consts.MP4, nsfw=self.context.nsfw)
         elif self.uploader == consts.STREAMABLE:
             return streamable.upload_file(video, 'GifReversingBot - {}'.format(self.get_gif().url))
 
@@ -323,7 +328,7 @@ class LinkGif(GifHost):
             else:
                 self.uploader = consts.GFYCAT
             self.url = r
-            return consts.GIF
+            return consts.GIF, consts.GIF
         else:
             self.id = None
             return None

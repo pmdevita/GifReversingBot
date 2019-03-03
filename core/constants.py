@@ -25,10 +25,11 @@ unnecessary_manual_message = "\n\nJust so you know, you don't have to manually g
 
 ignore_messages = ["Welcome to Moderating!"]
 
-VIDEO = 1
-GIF = 2
+MP4 = 'mp4'
+GIF = 'gif'
 OTHER = 3
 LINK = 4
+WEBM = 'webm'
 
 GFYCAT = 1
 IMGUR = 2

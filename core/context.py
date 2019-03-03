@@ -22,10 +22,17 @@ class CommentContext:
         """Recursively find the gif URL the user wants"""
         # If the object is a post, check it's URL
         if isinstance(reddit_object, praw.models.Submission):
-            # If post is a text post, search it's content
+            # Running through enough levels can cause a recursion error,
+            # which we need to then refresh our comment
             try:
+                # Any mention of NSFW must trip the NSFW flag
+                if is_nsfw_text(reddit_object.title):
+                    self.nsfw = True
+                # If post is a text post, search it's content
                 if reddit_object.is_self:
-                    # print(reddit_object.selftext)
+                    # Any mention of NSFW must trip the NSFW flag
+                    if is_nsfw_text(reddit_object.selftext):
+                        self.nsfw = True
                     # Search text for URL
                     url = old_find_url(reddit_object.selftext)
                     # If found
@@ -44,7 +51,9 @@ class CommentContext:
 
         # Else if the object is a comment, check it's text
         elif isinstance(reddit_object, praw.models.Comment):
-            #  print(reddit_object.body)
+            # Any mention of NSFW must trip the NSFW flag
+            if is_nsfw_text(reddit_object.body):
+                self.nsfw = True
             # If the comment was made by the bot, it must be a rereverse request
             # If the rereverse flag is already set, we must be at least a loop deep
             if reddit_object.author == consts.username and not self.rereverse and not checking_manual:
@@ -117,3 +126,7 @@ def is_nsfw(comment):
         sub_nsfw = comment.subreddit.over18
         # print("nsfw", post_nsfw, sub_nsfw)
         return post_nsfw or sub_nsfw
+
+def is_nsfw_text(text):
+    m = REPatterns.nsfw_text.findall(text)
+    return len(m) != 0

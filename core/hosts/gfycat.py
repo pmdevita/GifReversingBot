@@ -107,7 +107,7 @@ class Gfycat:
                 params["nsfw"] = 1
             if audio:
                 params['keepAudio'] = True
-            print("getting gfyname...", params)
+            print("getting gfyname...")
             r = requests.post(url, headers=headers, data=str(params))
             # print(r.text)
             metadata = r.json()
@@ -115,8 +115,8 @@ class Gfycat:
             # upload
             if media_type != consts.LINK:
                 url = "https://filedrop.gfycat.com"
-                if media_type == consts.VIDEO:
-                    files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/mp4")}
+                if media_type == consts.MP4 or media_type == consts.WEBM:
+                    files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "video/" + media_type)}
                 elif media_type == consts.GIF:
                     files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/gif")}
                 m = MultipartEncoder(fields=files)

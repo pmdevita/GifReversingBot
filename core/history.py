@@ -47,6 +47,22 @@ CREATE TABLE `gif` (
 """
 
 
+def bind_db(db):
+    creds = CredentialsLoader.get_credentials()['database']
+
+    if creds['type'] == 'sqlite':
+        db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
+    elif creds['type'] == 'mysql':
+        # Check for SSL arguments
+        ssl = {}
+        if creds.get('ssl-ca', None):
+            ssl['ssl'] = {'ca': creds['ssl-ca'], 'key': creds['ssl-key'], 'cert': creds['ssl-cert']}
+
+        db.bind(provider="mysql", host=creds['host'], user=creds['username'], password=creds['password'],
+                db=creds['database'], ssl=ssl, port=int(creds.get('port', 3306)))
+    else:
+        raise Exception("No database configuration")
+
 
 class Gif(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -59,20 +75,8 @@ class Gif(db.Entity):
     total_requests = Optional(int)
     last_requested_date = Optional(date)
 
-creds = CredentialsLoader.get_credentials()['database']
 
-if creds['type'] == 'sqlite':
-    db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
-elif creds['type'] == 'mysql':
-    # Check for SSL arguments
-    ssl = {}
-    if creds.get('ssl-ca', None):
-        ssl['ssl'] = {'ca': creds['ssl-ca'], 'key': creds['ssl-key'], 'cert': creds['ssl-cert']}
-
-    db.bind(provider="mysql", host=creds['host'], user=creds['username'], password=creds['password'],
-            db=creds['database'], ssl=ssl, port=int(creds.get('port', 3306)))
-else:
-    raise Exception("No database configuration")
+bind_db(db)
 
 db.generate_mapping(create_tables=True)
 

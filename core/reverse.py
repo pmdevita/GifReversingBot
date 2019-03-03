@@ -2,31 +2,13 @@ import subprocess
 import os
 import json
 import platform
+from core import constants as consts
 
+def zeros(number, num_zeros=4):
+    string = str(number)
+    return "".join(["0" for i in range(num_zeros - len(string))]) + string
 
-def old_reversegif(image, path=False):
-    """
-    :param image: filestream to reverse (must be a gif)
-    :param path: if you just want the string path to the file instead of the filestream
-    :return: filestream of a gif
-    """
-    print("Reversing gif...")
-    # Setup ImageMagick limits so we don't die
-    #os.environ['MAGICK_MEMORY_LIMIT'] = "1GB"
-    #os.environ['MAGICK_MAP_LIMIT'] = "1GB"
-    #os.environ['MAGICK_AREA_LIMIT'] = "1GB"
-
-    p = subprocess.Popen(
-        ["convert", "-", "-coalesce", "-reverse", "-verbose", "-layers", "OptimizePlus", "-loop", "0", "temp.gif"],
-        stdin=subprocess.PIPE)
-    response = p.communicate(input=image.read())
-    print(response)
-    if path:
-        return "temp.gif"
-    else:
-        return open("temp.gif", "rb")
-
-def reverse_gif(image, path=False):
+def reverse_gif(image, path=False, format=consts.GIF):
     """
     :param image: filestream to reverse
     :param path: if you just want the string path to the file instead of the filestream
@@ -44,12 +26,14 @@ def reverse_gif(image, path=False):
     print("Reversing gif...")
     os.chdir("temp")
 
-    with open("in.mp4", "wb") as f:
+    filename = "in." + format
+
+    with open(filename, "wb") as f:
         f.write(image.read())
 
     # Get correct fps
     command = subprocess.Popen(
-        [ffprobe, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", "in.mp4"],
+        [ffprobe, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", filename],
         stdout=subprocess.PIPE)
     raw_fps = json.loads(command.communicate()[0].decode("utf-8"))["streams"][0]["r_frame_rate"].split("/")
     fps = int(raw_fps[0]) / int(raw_fps[1])
@@ -57,31 +41,50 @@ def reverse_gif(image, path=False):
 
     print("Exporting frames...")
 
+    # Reverse filenames
     p = subprocess.Popen(
-        [ffmpeg, "-loglevel", "panic", "-i", "in.mp4", "-vf", "reverse", "frame%04d.png"]
+        [ffmpeg, "-loglevel", "quiet", "-i", filename, "original%04d.png"]
     )
+    # Reverse frame order in export
+    # p = subprocess.Popen(
+    #     [ffmpeg, "-loglevel", "info", "-i", "-vf", "reverse", filename, "frame%04d.png"]
+    # )
     response = p.communicate()
+
 
     if platform.system() == 'Windows':
         subprocess.Popen(
-            ["del", "/Q", "in.mp4"],
+            ["del", "/Q", filename],
             shell=True
         ).communicate()
     else:
         subprocess.Popen(
-            ["rm in.mp4"],
+            ["rm {}".format(filename)],
             shell=True
         ).communicate()
+
+
+    # Reverse filenames
+    for i in os.walk("."):
+        files = i[2]
+        break
+
+    counter = len(files)
+    for i in range(1, len(files) + 1):
+        os.rename("original{}.png".format(zeros(i)), "frame{}.png".format(zeros(counter)))
+        counter -= 1
 
     # Statistics
     for i in os.walk("."):
         files = i[2]
         break
+
     pics_size = sum(os.path.getsize(f) for f in files)
     print(pics_size)
 
-    print("Rebuilding gif...")
 
+    print("Rebuilding gif...")
+    
 
     if platform.system() == 'Windows':
         p = subprocess.Popen(
@@ -121,17 +124,29 @@ def reverse_gif(image, path=False):
     else:
         return open("temp.gif", "rb")
 
-def reverse_mp4(mp4, audio=False):
+def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     """
     :param mp4: filestream to reverse (must be a mp4)
     :return: filestream of an mp4
     """
-    print("Reversing mp4...")
+    print("Reversing {} into {}...".format(format, output))
 
-    mute = ["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
-            "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
-    sound = ["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
-             "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+    loglevel = "error"
+
+    if output == consts.MP4:
+        in_file = "source.mp4"
+        out_file = "temp.mp4"
+        mute = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
+                "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+        sound = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
+                 "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+    elif output == consts.WEBM:
+        in_file = "source.webm"
+        out_file = "temp.webm"
+        mute = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-c:v", "libvpx",
+                "-q:v", "0", "-y", "-f", "webm", "temp.webm"]
+        sound = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libvpx",
+                 "-q:v", "0", "-y", "-f", "webm", "temp.webm"]
 
     if audio:
         command = sound
@@ -141,18 +156,20 @@ def reverse_mp4(mp4, audio=False):
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     response = p.communicate(input=mp4.read())[0].decode()
 
+    # print(type(response), response)
+
     # Weird thing
     if "partial file" in response:
         print("FFMPEG gave weird error, putting in file to reverse")
-        command[4] = "source.mp4"
+        command[4] = in_file
         mp4.seek(0)
-        with open("source.mp4", 'wb') as f:
+        with open(in_file, 'wb') as f:
             f.write(mp4.read())
 
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         response = p.communicate()[0].decode()
-        os.remove("source.mp4")
+        os.remove(in_file)
 
-    reversed = open("temp.mp4", "rb")
+    reversed = open(out_file, "rb")
 
     return reversed

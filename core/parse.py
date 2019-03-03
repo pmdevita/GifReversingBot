@@ -51,8 +51,9 @@ def url_host(url):
     if REPatterns.streamable.findall(url):
         return True
     # Reddit Submission
-    if REPatterns.reddit_submission.findall(url):
+    if REPatterns.reddit_submission.findall(url)[0][2]:
         return True
+    # Link to GIF
     if REPatterns.link_gif.findall(url):
         return True
 

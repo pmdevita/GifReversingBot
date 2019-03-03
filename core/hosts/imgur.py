@@ -166,7 +166,7 @@ def imgurupload(file, type, nsfw=False):
                    "Referer": "https://imgur.com/upload",
                    "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9",
                    "cookie": consts.imgur_spoof_cookie}
-        if type == consts.VIDEO:
+        if type == consts.MP4:
             files = [
                 ("new_album_id", setup["data"]["new_album_id"]),
                 ("Filedata", ("{}.mp4".format(setup["data"]["new_album_id"]), file, "video/mp4"))]
@@ -234,7 +234,7 @@ def imgurupload(file, type, nsfw=False):
             # input()
             gif = OldGif(consts.IMGUR, image_id, url=final_url, log=True, nsfw=nsfw)
 
-        elif type == consts.VIDEO:
+        elif type == consts.MP4:
             # watch ticket to get link
             url = "https://imgur.com/upload/poll"
             headers = {"Accept": "*/*", "X-Requested-With": "XMLHttpRequest",
@@ -243,7 +243,7 @@ def imgurupload(file, type, nsfw=False):
                        "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9",
                         "cookie": consts.imgur_spoof_cookie}
             params = {"tickets[]": upload["data"]["ticket"]}
-            print("waiting for processing...")
+            print("waiting for processing...", end="")
             r = requests.get(url, params, headers=headers)
             try:
                 ticket = r.json()
@@ -262,7 +262,7 @@ def imgurupload(file, type, nsfw=False):
                 print(r.text)
                 input()
 
-            print(r.text)
+            # print(r.text)
             checks = 13
             image_id = None
             while ticket["success"] == True:
@@ -287,11 +287,12 @@ def imgurupload(file, type, nsfw=False):
                             continue
                         else:
                             print("Imgur not responding, upload failed!")
-                            return Done
+                            return None
                     print("I have no idea what's going on")
                     print(r.text)
                     input()
-                print(r.text)
+                # print(r.text)
+                print(".", end="")
             if not image_id:
                 print("IMGUR TIMED OUT")
                 tries -= 1
@@ -303,7 +304,6 @@ def imgurupload(file, type, nsfw=False):
                     print("IMGUR UPLOAD FAILURE")
                     return None
 
-            # TODO: once gif uploading is fixed, unindent this
             # image_url = "https://imgur.com/{}.gifv".format(image_id)
             gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")

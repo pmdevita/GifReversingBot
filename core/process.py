@@ -51,10 +51,10 @@ def process_comment(reddit, comment):
         return SUCCESS
 
     # Analyze how the gif should be reversed
-    method = gif_host.analyze()
+    in_format, out_format = gif_host.analyze()
 
     # If there was some problem analyzing, exit
-    if not method:
+    if not in_format or not out_format:
         return USER_FAILURE
 
     reversed_gif = None
@@ -70,17 +70,20 @@ def process_comment(reddit, comment):
         return USER_FAILURE
 
     # Reverse it as a GIF
-    if method == consts.GIF:
+    if out_format == consts.GIF:
         # With reversed gif
-        with reverse_gif(BytesIO(r.content)) as f:
+        with reverse_gif(BytesIO(r.content), format=in_format) as f:
             # Give to gif_host's uploader
             reversed_gif = gif_host.upload_gif(f)
     # Reverse it as a video
-    elif method == consts.VIDEO:
-        with reverse_mp4(BytesIO(r.content), original_gif.audio) as f:
+    elif out_format == consts.MP4:
+        with reverse_mp4(BytesIO(r.content), original_gif.audio, format=in_format) as f:
+            reversed_gif = gif_host.upload_video(f)
+    elif out_format == consts.WEBM:
+        with reverse_mp4(BytesIO(r.content), original_gif.audio, format=in_format, output=consts.WEBM) as f:
             reversed_gif = gif_host.upload_video(f)
     # Defer to the object's unique method
-    elif method == consts.OTHER:
+    elif out_format == consts.OTHER:
         reversed_gif = gif_host.reverse()
 
     if reversed_gif:

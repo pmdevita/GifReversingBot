@@ -42,5 +42,10 @@ class REPatterns:
     # Gif link
     link_gif = re.compile("(https?://\S*\.gif)")
 
+    # NSFW
+    nsfw_text = re.compile("(nsfw)", re.I)
+
+
 if __name__ == '__main__':
-    print(REPatterns.reddit_submission.findall("https://www.reddit.com/r/holdmybeer/comments/9nn67x/hmb_while_i_jump_over_this_pole/"))
+    if REPatterns.reddit_submission.findall("https://www.reddit.com/r/gifs")[0][2]:
+        print("hi")
