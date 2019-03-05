@@ -26,12 +26,12 @@ class CommentContext:
             # which we need to then refresh our comment
             try:
                 # Any mention of NSFW must trip the NSFW flag
-                if is_nsfw_text(reddit_object.title):
+                if is_nsfw_text(reddit_object.title) and not checking_manual:
                     self.nsfw = True
                 # If post is a text post, search it's content
                 if reddit_object.is_self:
                     # Any mention of NSFW must trip the NSFW flag
-                    if is_nsfw_text(reddit_object.selftext):
+                    if is_nsfw_text(reddit_object.selftext) and not checking_manual:
                         self.nsfw = True
                     # Search text for URL
                     url = old_find_url(reddit_object.selftext)
@@ -52,7 +52,7 @@ class CommentContext:
         # Else if the object is a comment, check it's text
         elif isinstance(reddit_object, praw.models.Comment):
             # Any mention of NSFW must trip the NSFW flag
-            if is_nsfw_text(reddit_object.body):
+            if is_nsfw_text(reddit_object.body) and not checking_manual:
                 self.nsfw = True
             # If the comment was made by the bot, it must be a rereverse request
             # If the rereverse flag is already set, we must be at least a loop deep
