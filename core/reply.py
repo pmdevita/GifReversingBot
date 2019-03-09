@@ -2,9 +2,18 @@ import praw.exceptions
 import prawcore.exceptions
 from core import constants as consts
 from core.context import CommentContext
+from core.gif import Gif as GifObject
 
 
-def reply(context: CommentContext, url: str):
+def reply(context: CommentContext, gif):
+    # If we have a gif, use it's data. Else, use info from context
+    if isinstance(gif, GifObject):
+        url = gif.url
+        nsfw = gif.nsfw
+    else:
+        url = gif
+        nsfw = context.nsfw
+
     comment = context.comment
 
     # Assemble prefixing messages
@@ -14,7 +23,7 @@ def reply(context: CommentContext, url: str):
 
     # Format and send the reply
     try:
-        if context.nsfw:
+        if nsfw:
             comment = comment.reply(consts.nsfw_reply_template.format(message))
         else:
             comment = comment.reply(consts.reply_template.format(message))

@@ -9,7 +9,7 @@ from core.regex import REPatterns
 from core import constants as consts
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from core.secret import secret_process
-from pprint import pprint
+from pony.orm.dbapiprovider import OperationalError
 
 credentials = CredentialsLoader().get_credentials()
 
@@ -100,6 +100,11 @@ while True:
         reddit.inbox.mark_read(mark_read)
         print("Exiting...")
         break
+
+    except OperationalError:
+        print("Unable to connect to database")
+        reddit.redditor(operator).message("Unable to connect to database")
+        time.sleep(consts.sleep_time * 2)
 
     except ConnectionError:
         print('A connection was unable to be established')

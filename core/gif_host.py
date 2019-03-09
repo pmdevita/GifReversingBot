@@ -225,7 +225,8 @@ class RedditVid(GifHost):
             if submission.is_video:
                 self.url = submission.media['reddit_video']['fallback_url']
         else:  # Maybe it was deleted?
-            return None
+            print("Deleted?")
+            return None, None
 
         r = requests.get(self.url)
         self.url = r
@@ -239,6 +240,7 @@ class RedditVid(GifHost):
             return consts.MP4, consts.WEBM
         elif fps * duration < 6000:  # fallback as a gif, upload to gfycat
             # I would like to be able to predict a >200MB GIF file size and switch from
+            print("video has {} frames".format(fps * duration))
             self.uploader = consts.GFYCAT
             return consts.MP4, consts.GIF
         else:

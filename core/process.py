@@ -47,7 +47,7 @@ def process_comment(reddit, comment):
 
     # If it was in the database, reuse it
     if gif:
-        reply(context, gif.url)
+        reply(context, gif)
         return SUCCESS
 
     # Analyze how the gif should be reversed
@@ -92,7 +92,7 @@ def process_comment(reddit, comment):
             add_to_database(gif_host.get_gif(), reversed_gif)
         # Reply
         print("Replying!", reversed_gif.url)
-        reply(context, reversed_gif.url)
+        reply(context, reversed_gif)
         return SUCCESS
     else:
         return UPLOAD_FAILURE
