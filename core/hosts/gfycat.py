@@ -120,7 +120,7 @@ class Gfycat:
                 elif media_type == consts.GIF:
                     files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "image/gif")}
                 m = MultipartEncoder(fields=files)
-                print("uploading...")
+                print("uploading to gfyid {}...".format(metadata['gfyname']))
                 r = requests.post(url, data=m, headers={'Content-Type': m.content_type, 'User-Agent': consts.user_agent})
 
             # check status for gif's id

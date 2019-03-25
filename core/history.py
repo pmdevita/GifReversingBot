@@ -7,46 +7,6 @@ from core.credentials import CredentialsLoader
 
 db = Database()
 
-"""
-v1 Database
-CREATE TABLE "gif" (
-  "id" INTEGER CONSTRAINT "pk_gif" PRIMARY KEY AUTOINCREMENT,
-  "origin_host" INTEGER NOT NULL,
-  "origin_id" TEXT NOT NULL,
-  "reversed_host" INTEGER NOT NULL,
-  "reversed_id" TEXT NOT NULL,
-  "time" DATE
-)
-
-v2 Database
-CREATE TABLE "gif" (
-  "id" INTEGER CONSTRAINT "pk_gif" PRIMARY KEY AUTOINCREMENT,
-  "origin_host" INTEGER NOT NULL,
-  "origin_id" TEXT NOT NULL,
-  "reversed_host" INTEGER NOT NULL,
-  "reversed_id" TEXT NOT NULL,
-  "time" DATE NOT NULL,
-  "nsfw" BOOLEAN NOT NULL
-)
-
-v3 Database
-CREATE TABLE `gif` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `origin_host` INT(11) NOT NULL,
-    `origin_id` VARCHAR(255) NOT NULL,
-    `reversed_host` INT(11) NOT NULL,
-    `reversed_id` VARCHAR(255) NOT NULL,
-    `time` DATE NOT NULL,
-    `nsfw` TINYINT(1) NOT NULL,
-    `total_requests` INT NULL,
-    `last_requested_date` DATE NULL,
-    PRIMARY KEY (`id`)
-)
-
-
-"""
-
-
 def bind_db(db):
     creds = CredentialsLoader.get_credentials()['database']
 
@@ -63,6 +23,8 @@ def bind_db(db):
     else:
         raise Exception("No database configuration")
 
+    db.generate_mapping(create_tables=True)
+
 
 class Gif(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -77,8 +39,6 @@ class Gif(db.Entity):
 
 
 bind_db(db)
-
-db.generate_mapping(create_tables=True)
 
 
 def check_database(original_gif):

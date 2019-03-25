@@ -10,7 +10,7 @@ from core import constants as consts
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 
 
-def process_comment(reddit, comment):
+def process_comment(reddit, comment, queue=None):
     # Check if comment is deleted
     if not comment.author:
         print("Comment doesn't exist????")
@@ -29,6 +29,82 @@ def process_comment(reddit, comment):
         reply(context, context.url)
         return SUCCESS
 
+    # Create object to grab gif from host
+    print(context.url)
+    gif_host = GifHost.open(context, reddit)
+
+    # If the link was not recognized, return
+    if not gif_host:
+        return USER_FAILURE
+
+    # If the gif was unable to be acquired, return
+    original_gif = gif_host.get_gif()
+    if not original_gif:
+        return USER_FAILURE
+
+    if queue:
+        # Add to queue
+        print("Adding to queue...")
+        queue.add_job(context.to_json(), original_gif)
+        return SUCCESS
+
+    # Check database for gif before we reverse it
+    gif = check_database(original_gif)
+
+    # If it was in the database, reuse it
+    if gif:
+        reply(context, gif)
+        return SUCCESS
+
+    # Analyze how the gif should be reversed
+    in_format, out_format = gif_host.analyze()
+
+    # If there was some problem analyzing, exit
+    if not in_format or not out_format:
+        return USER_FAILURE
+
+    reversed_gif = None
+
+    if isinstance(gif_host.url, str):
+        r = requests.get(gif_host.url)
+    elif isinstance(gif_host.url, requests.Response):
+        r = gif_host.url
+
+    # If we 404, it must not exist
+    if r.status_code == 404:
+        print("Gif not found at URL")
+        return USER_FAILURE
+
+    # Reverse it as a GIF
+    if out_format == consts.GIF:
+        # With reversed gif
+        with reverse_gif(BytesIO(r.content), format=in_format) as f:
+            # Give to gif_host's uploader
+            reversed_gif = gif_host.upload_gif(f)
+    # Reverse it as a video
+    elif out_format == consts.MP4:
+        with reverse_mp4(BytesIO(r.content), original_gif.audio, format=in_format) as f:
+            reversed_gif = gif_host.upload_video(f)
+    elif out_format == consts.WEBM:
+        with reverse_mp4(BytesIO(r.content), original_gif.audio, format=in_format, output=consts.WEBM) as f:
+            reversed_gif = gif_host.upload_video(f)
+    # Defer to the object's unique method
+    elif out_format == consts.OTHER:
+        reversed_gif = gif_host.reverse()
+
+    if reversed_gif:
+        # Add gif to database
+        if reversed_gif.log:
+            add_to_database(gif_host.get_gif(), reversed_gif)
+        # Reply
+        print("Replying!", reversed_gif.url)
+        reply(context, reversed_gif)
+        return SUCCESS
+    else:
+        return UPLOAD_FAILURE
+
+
+def process_reverse(reddit, context):
     # Create object to grab gif from host
     print(context.url)
     gif_host = GifHost.open(context, reddit)
@@ -96,7 +172,6 @@ def process_comment(reddit, comment):
         return SUCCESS
     else:
         return UPLOAD_FAILURE
-
 
 def process_mod_invite(reddit, message):
     subreddit_name = message.subject[26:]

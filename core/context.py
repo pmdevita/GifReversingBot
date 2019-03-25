@@ -7,7 +7,6 @@ from core.gif import GifHostManager
 from core.hosts import GifHost
 from pprint import pprint
 
-
 class CommentContext:
     def __init__(self, reddit, comment):
         """Determine the context of a summon by grabbing what comment/submission and url it is referring too"""
@@ -17,6 +16,26 @@ class CommentContext:
         self.nsfw = is_nsfw(comment)
         self.distinguish = False
         self.url = self.determine_target_url(reddit, self.comment)
+
+    @classmethod
+    def from_json(cls, reddit, data):
+        # Skip the normal init function
+        context = cls.__new__(cls)
+        context.comment = reddit.comment(id=data['comment'])
+        del data['comment']
+        for i in data:
+            context.__setattr__(i, data[i])
+        return context
+
+    def to_json(self):
+        data = {}
+        for i in vars(self):
+            if i[0] != "_" or i == "comment":
+                data[i] = self.__getattribute__(i)
+        data['comment'] = self.comment.id
+        return data
+
+
 
     def determine_target_url(self, reddit, reddit_object, layer=0, checking_manual=False):
         """Recursively find the gif URL the user wants"""

@@ -24,9 +24,6 @@ class GifHostManager:
             self.reddit = reddit
 
     def extract_gif(self, text) -> Optional[Gif]:
-        for host in self.hosts:
-            if host.regex.findall(text):
-                return host.get_gif(url=text)
         # Try to resolve a submission URL
         if REPatterns.reddit_submission.findall(text):
             submission = self.reddit.submission(REPatterns.reddit_submission.findall(text)[0][2])
@@ -35,6 +32,9 @@ class GifHostManager:
             else:
                 url = submission.url
             return self.extract_gif(url)
+        for host in self.hosts:
+            if host.regex.findall(text):
+                return host.get_gif(url=text)
         print("Unknown URL Type")
         return None
 

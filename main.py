@@ -27,6 +27,16 @@ print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
 
+mode = True
+
+if mode:
+    # Normal
+    q = None
+else:
+    # Use the queue
+    from core.queue import Queue
+    q = Queue()
+
 while True:
     try:
         failure = False
@@ -40,11 +50,11 @@ while True:
                 result = None
                 # username mentions are simple
                 if message.subject == "username mention":
-                    result = process_comment(reddit, reddit.comment(message.id))
+                    result = process_comment(reddit, reddit.comment(message.id), q)
                 # if it was a reply, check to see if it contained a summon
                 elif message.subject == "comment reply" or message.subject == "post reply":
                     if REPatterns.reply_mention.findall(message.body):
-                        result = process_comment(reddit, reddit.comment(message.id))
+                        result = process_comment(reddit, reddit.comment(message.id), q)
                     else:
                         secret_process(reddit, message)
                 # Depending on success or other outcomes, we mark the message read
@@ -78,13 +88,8 @@ while True:
         else:
             failure_counter = 1
 
-        # for sub in modded_subs:
-        #     for message in sub.mod.inbox():
-        #         if message.subject == consts.subreddit_mod_summon and message.author.name == "AutoModerator":
-        #             post_id = REPatterns.reddit_submission.findall(message.body)[0][2]
-        #             if post_id:
-        #                 process_comment(reddit, reddit.submission(id=post_id))
-        #                 message.delete()
+        if q:
+            q.clean()
 
         time.sleep(consts.sleep_time * failure_counter)
 

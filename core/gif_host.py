@@ -126,7 +126,7 @@ class ImgurGif(GifHost):
 
         if not self.pic.animated:
             print("Not a gif!")
-            return False
+            return None, None
         r = requests.get(self.pic.mp4)
         duration = get_duration(BytesIO(r.content))
 
@@ -238,7 +238,7 @@ class RedditVid(GifHost):
         elif duration < 61: # fallback to gfycat
             self.uploader = consts.GFYCAT
             return consts.MP4, consts.WEBM
-        elif fps * duration < 6000:  # fallback as a gif, upload to gfycat
+        elif fps * duration < 2000:  # fallback as a gif, upload to gfycat
             # I would like to be able to predict a >200MB GIF file size and switch from
             print("video has {} frames".format(fps * duration))
             self.uploader = consts.GFYCAT
