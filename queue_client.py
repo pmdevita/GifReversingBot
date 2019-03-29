@@ -56,7 +56,7 @@ while True:
             result = process_reverse(reddit, CommentContext.from_json(reddit, dict(i.context)))
             if result == SUCCESS or result == USER_FAILURE:
                 q.remove_job(i)
-        time.sleep(consts.sleep_time * failure_counter)
+        time.sleep(consts.sleep_time * failure_counter / 4)
 
     except prawcore.exceptions.ResponseException as e:   # Something funky happened
         q.exit_queue()

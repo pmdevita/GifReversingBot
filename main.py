@@ -9,6 +9,7 @@ from core.regex import REPatterns
 from core import constants as consts
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from core.secret import secret_process
+from core.arguments import parser
 from pony.orm.dbapiprovider import OperationalError
 
 credentials = CredentialsLoader().get_credentials()
@@ -22,14 +23,15 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
                      username=credentials['reddit']['username'],
                      password=credentials['reddit']['password'])
 
+args = parser.parse_args()
+
 print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
 mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
 
-mode = True
-
-if mode:
+# Queue mode
+if args.queue:
     # Normal
     q = None
 else:

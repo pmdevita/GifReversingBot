@@ -112,6 +112,19 @@ class Gfycat:
             # print(r.text)
             metadata = r.json()
 
+            if 'gfyname' not in metadata:
+                print(metadata)
+                print("What the heck???")
+                # Retry block
+                tries -= 1
+                if tries:
+                    if media_type != consts.LINK:
+                        filestream.seek(0)
+                    time.sleep(5)
+                    continue
+                else:
+                    break
+
             # upload
             if media_type != consts.LINK:
                 url = "https://filedrop.gfycat.com"
@@ -149,6 +162,7 @@ class Gfycat:
             # If there was something wrong, we loop back and try again
             if ticket["task"] == "NotFoundo" or ticket["task"] == "error":
                 print("Error uploading? Trying again", ticket)
+                # Retry block
                 tries -= 1
                 if tries:
                     if media_type != consts.LINK:
@@ -159,6 +173,7 @@ class Gfycat:
                     break
             elif ticket['task'] == 'encoding':
                 print("Upload timed out? Trying again", ticket)
+                # Retry block
                 tries -= 1
                 if tries:
                     if media_type != consts.LINK:

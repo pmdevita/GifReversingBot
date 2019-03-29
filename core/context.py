@@ -1,5 +1,6 @@
 from typing import Optional
 import praw.models
+from praw.const import API_PATH
 from core import parse
 from core import constants as consts
 from core.regex import REPatterns
@@ -21,8 +22,12 @@ class CommentContext:
     def from_json(cls, reddit, data):
         # Skip the normal init function
         context = cls.__new__(cls)
-        context.comment = reddit.comment(id=data['comment'])
+        # Get reddit object info
+        params = {'id': data['comment']}
+        r = reddit.get(API_PATH['info'], params=params)
+        context.comment = r.children[0]
         del data['comment']
+        # Process rest of data
         for i in data:
             context.__setattr__(i, data[i])
         return context
@@ -32,7 +37,7 @@ class CommentContext:
         for i in vars(self):
             if i[0] != "_" or i == "comment":
                 data[i] = self.__getattribute__(i)
-        data['comment'] = self.comment.id
+        data['comment'] = self.comment.name
         return data
 
 
