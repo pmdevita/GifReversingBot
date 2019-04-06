@@ -53,7 +53,7 @@ while True:
     try:
         for i in q.get_jobs():
             print(i, i.origin_host, i.origin_id)
-            result = process_reverse(reddit, CommentContext.from_json(reddit, dict(i.context)))
+            result = process_comment(reddit, original_context=CommentContext.from_json(reddit, dict(i.context)))
             if result == SUCCESS or result == USER_FAILURE:
                 q.remove_job(i)
         time.sleep(consts.sleep_time * failure_counter / 4)

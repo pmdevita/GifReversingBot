@@ -73,6 +73,17 @@ def add_to_database(original_gif, reversed_gif):
                       last_requested_date=date.today())
         commit()
 
-
-
-
+def delete_from_database(original_gif):
+    with db_session:
+        # Select gif as original first
+        query = select(g for g in Gif if g.origin_host == original_gif.host and g.origin_id == original_gif.id)
+        gif = query.first()
+        # If we have it, delete it
+        if gif:
+            gif.delete()
+        # Possibly a rereversed then
+        else:
+            query = select(g for g in Gif if g.reversed_host == original_gif.host and g.reversed_id == original_gif.id)
+            gif = query.first()
+            if gif:
+                gif.delete()

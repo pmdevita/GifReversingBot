@@ -16,20 +16,23 @@ class CommentContext:
         self.unnecessary_manual = False
         self.nsfw = is_nsfw(comment)
         self.distinguish = False
+        self.reupload = is_reupload(comment.body)
         self.url = self.determine_target_url(reddit, self.comment)
 
     @classmethod
     def from_json(cls, reddit, data):
         # Skip the normal init function
         context = cls.__new__(cls)
-        # Get reddit object info
-        params = {'id': data['comment']}
-        r = reddit.get(API_PATH['info'], params=params)
-        context.comment = r.children[0]
-        del data['comment']
         # Process rest of data
         for i in data:
             context.__setattr__(i, data[i])
+            # Process comment differently
+            if i == 'comment':
+                # Get reddit object info
+                params = {'id': data['comment']}
+                r = reddit.get(API_PATH['info'], params=params)
+                context.comment = r.children[0]
+
         return context
 
     def to_json(self):
@@ -80,7 +83,8 @@ class CommentContext:
                 self.nsfw = True
             # If the comment was made by the bot, it must be a rereverse request
             # If the rereverse flag is already set, we must be at least a loop deep
-            if reddit_object.author == consts.username and not self.rereverse and not checking_manual:
+            if reddit_object.author == consts.username and not self.rereverse and not checking_manual \
+                    and not self.reupload:
                 self.rereverse = True
                 return self.determine_target_url(reddit, reddit_object.parent(), layer+1, checking_manual)
             # If it's an AutoModerator summon, move our summon comment to the AutoMod's parent
@@ -151,6 +155,12 @@ def is_nsfw(comment):
         # print("nsfw", post_nsfw, sub_nsfw)
         return post_nsfw or sub_nsfw
 
+
 def is_nsfw_text(text):
     m = REPatterns.nsfw_text.findall(text)
+    return len(m) != 0
+
+
+def is_reupload(text):
+    m = REPatterns.reupload_text.findall(text)
     return len(m) != 0

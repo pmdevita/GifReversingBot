@@ -12,6 +12,7 @@ from core.hosts.gfycat import Gfycat as GfycatClient
 from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration, get_fps
+from core.context import CommentContext
 
 
 creds = CredentialsLoader.get_credentials()
@@ -64,7 +65,10 @@ class GifHost:
                 context.url = submission.url
 
         url = context.url
+        return cls._switch_block(context, url)
 
+    @classmethod
+    def _switch_block(cls, context, url):
         # Imgur
         if REPatterns.imgur.findall(url):
             return ImgurGif(context)
@@ -86,6 +90,12 @@ class GifHost:
 
         print("Unknown URL Type", url)
         return None
+
+    @classmethod
+    def from_gif(self, gif, reddit):
+        context = CommentContext.from_json(reddit, {'nsfw': gif.nsfw, 'url': gif.url})
+        return self._switch_block(context, gif.url)
+
 
 
 class ImgurGif(GifHost):

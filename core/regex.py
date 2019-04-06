@@ -45,6 +45,9 @@ class REPatterns:
     # NSFW
     nsfw_text = re.compile("(nsfw)", re.I)
 
+    # Reupload
+    reupload_text = re.compile("(reupload|renew)", re.I)
+
 
 if __name__ == '__main__':
     if REPatterns.reddit_submission.findall("https://www.reddit.com/r/gifs")[0][2]:
