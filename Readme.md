@@ -9,7 +9,7 @@ Create a file named `credentials.ini` in the root directory with the following c
 ```ini
 [general]
 mode = development|production
-crash_support_user = username to be pinged on crash
+operator = username to be pinged on crash
 
 [database]
 type = sqlite|mysql

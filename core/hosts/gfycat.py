@@ -25,13 +25,14 @@ class Gfycat:
 
     def __init__(self):
         creds = CredentialsLoader.get_credentials()['gfycat']
-        self.gfypath = creds["gfypath"]
         self.gfyid = creds["gfycat_id"]
         self.gfysecret = creds["gfycat_secret"]
-        self.username = creds.get('username', None)
-        self.password = creds.get('password', None)
-        self.token = creds.get('refresh_token', None)
+        self.access = creds.get('access_token', None)
+        self.refresh = creds.get('refresh_token', None)
         self.timeout = int(creds.get('token_expiration', 0))
+
+        if self.access is None or self.refresh is None:
+            self.authenticate(True)
 
         # self.timeout, self.token = self._load_data()
 
@@ -41,32 +42,56 @@ class Gfycat:
             cls.instance = cls()
         return cls.instance
 
-    def _load_data(self):
-        try:
-            with open(self.gfypath, 'r') as f:
-                data = json.load(f)
-                if data is None:
-                    return 0, ""
-                else:
-                    return data
-        except:
-            return 0, ""
+    def web_auth(self):
+        print("Authorize here: "
+              "https://gfycat.com/oauth/authorize?client_id={}&scope=all&state=gifreversingbot"
+              "&response_type=code&redirect_uri=http://127.0.0.1:8000/test/".format(self.gfyid))
+        import http.server
+        server_address = ('', 8000)
 
-    def _save_data(self):
-        with open(self.gfypath, "w") as f:
-            json.dump((self.timeout, self.token), f)
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self, *args, **kwargs):
+                print(args, kwargs, self.path)
+                self.send_response(200, "test")
+                return "test"
+
+        httpd = http.server.HTTPServer(server_address, Handler)
+        httpd.serve_forever()
+
+    def authenticate(self, password=False):
+        # For some dumb reason it has to be a string
+        if password:
+            print("Log into Gfycat")
+            username = input("Username: ")
+            password = input("Password: ")
+
+            data = {"grant_type": "password", "client_id": self.gfyid, "client_secret": self.gfysecret,
+                    "username": username, "password": password}
+        else:
+            data = {"grant_type": "client_credentials", "client_id": self.gfyid,
+                    "client_secret": self.gfysecret}
+
+        url = "https://api.gfycat.com/v1/oauth/token"
+        r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
+        try:
+            response = r.json()
+        except json.decoder.JSONDecodeError as e:
+            print(r.text)
+            raise
+        self.timeout = int(time.time()) + response["refresh_token_expires_in"]
+        self.access = response["access_token"]
+        self.refresh = response["refresh_token"]
+        CredentialsLoader.set_credential('gfycat', 'refresh_token', self.refresh)
+        CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
+        CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
+
 
     def get_token(self):
         # If the token has expired, request a new one
         if self.timeout < int(time.time()):
             # For some dumb reason it has to be a string
-            data = {"grant_type": "client_credentials", "client_id": self.gfyid,
-                    "client_secret": self.gfysecret}
-            if self.username:
-                data['grant_type'] = 'password'
-                data['username'] = self.username
-                data['password'] = self.password
-
+            data = {"grant_type": "refresh", "client_id": self.gfyid,
+                    "client_secret": self.gfysecret, "refresh_token": self.refresh}
             url = "https://api.gfycat.com/v1/oauth/token"
             r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
             try:
@@ -75,10 +100,10 @@ class Gfycat:
                 print(r.text)
                 raise
             self.timeout = int(time.time()) + response["expires_in"]
-            self.token = response["access_token"]
-            CredentialsLoader.set_credential('gfycat', 'refresh_token', self.token)
+            self.access = response["access_token"]
+            CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
             CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
-        return self.token
+        return self.access
 
     def get_gfycat(self, id):
         headers = {"Authorization": "Bearer {}".format(self.get_token())}

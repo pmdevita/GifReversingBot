@@ -65,10 +65,10 @@ class GifHost:
                 context.url = submission.url
 
         url = context.url
-        return cls._switch_block(context, url)
+        return cls._switch_block(context, url, reddit)
 
     @classmethod
-    def _switch_block(cls, context, url):
+    def _switch_block(cls, context, url, reddit):
         # Imgur
         if REPatterns.imgur.findall(url):
             return ImgurGif(context)
@@ -94,7 +94,7 @@ class GifHost:
     @classmethod
     def from_gif(self, gif, reddit):
         context = CommentContext.from_json(reddit, {'nsfw': gif.nsfw, 'url': gif.url})
-        return self._switch_block(context, gif.url)
+        return self._switch_block(context, gif.url, reddit)
 
 
 
