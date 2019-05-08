@@ -126,6 +126,7 @@ def old_find_url(text):
     return None
 
 
+"""Deprecated???"""
 def extract_gif_from_comment(ghm: GifHostManager, text: str) -> Optional[GifHost]:
     """Checks a string for valid urls"""
     # Look through every word to see if one is a url

@@ -1,8 +1,11 @@
 import configparser
+import os
+dirname = os.path.dirname(__file__)
+default_path = os.path.join(dirname, '../credentials.ini')
 
 class CredentialsLoader:
     config = None
-    path = "credentials.ini"
+    path = default_path
 
     @classmethod
     def get_credentials(cls, file=None):

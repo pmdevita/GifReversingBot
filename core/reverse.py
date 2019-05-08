@@ -3,8 +3,9 @@ import os
 import json
 import platform
 from core import constants as consts
+from core.file import get_fps
 
-def zeros(number, num_zeros=4):
+def zeros(number, num_zeros=6):
     string = str(number)
     return "".join(["0" for i in range(num_zeros - len(string))]) + string
 
@@ -14,6 +15,7 @@ def reverse_gif(image, path=False, format=consts.GIF):
     :param path: if you just want the string path to the file instead of the filestream
     :return: filestream of a gif
     """
+    image.seek(0)
     if platform.system() == 'Windows':
         ffmpeg = '..\\ffmpeg.exe'
         ffprobe = '..\\ffprobe'
@@ -32,22 +34,20 @@ def reverse_gif(image, path=False, format=consts.GIF):
         f.write(image.read())
 
     # Get correct fps
-    command = subprocess.Popen(
-        [ffprobe, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", filename],
-        stdout=subprocess.PIPE)
-    raw_fps = json.loads(command.communicate()[0].decode("utf-8"))["streams"][0]["r_frame_rate"].split("/")
-    fps = int(raw_fps[0]) / int(raw_fps[1])
+    # with open(filename, "rb") as f:
+    #     fps = get_fps(f)
+    fps = get_fps(image)
     print("FPS:", fps)
 
     print("Exporting frames...")
 
     # Reverse filenames
     p = subprocess.Popen(
-        [ffmpeg, "-loglevel", "quiet", "-i", filename, "original%04d.png"]
+        [ffmpeg, "-loglevel", "quiet", "-i", filename, "original%06d.png"]
     )
     # Reverse frame order in export
     # p = subprocess.Popen(
-    #     [ffmpeg, "-loglevel", "info", "-i", "-vf", "reverse", filename, "frame%04d.png"]
+    #     [ffmpeg, "-loglevel", "info", "-i", "-vf", "reverse", filename, "frame%06d.png"]
     # )
     response = p.communicate()
 
@@ -133,6 +133,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
     loglevel = "error"
 
+    mp4.seek(0)
     if output == consts.MP4:
         in_file = "source.mp4"
         out_file = "temp.mp4"
@@ -156,7 +157,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     response = p.communicate(input=mp4.read())[0].decode()
 
-    # print(type(response), response)
+    print(response)
 
     # Weird thing
     if "partial file" in response:

@@ -8,7 +8,7 @@ from core import constants as consts
 from core.gif import Gif
 from core.regex import REPatterns
 from core.hosts.imgur import ImgurClient
-from core.hosts.gfycat import Gfycat as GfycatClient
+from core.hosts.gfycat import GfycatClient as GfycatClient
 from core.hosts.streamable import StreamableClient
 from core.credentials import CredentialsLoader
 from core.file import get_duration, get_fps
@@ -178,11 +178,16 @@ class GfycatGif(GifHost):
         super(GfycatGif, self).__init__(context)
         self.id = REPatterns.gfycat.findall(context.url)[0]
         self.pic = gfycat.get_gfycat(self.id)
-        # Can't get the full gif file for some reason so we always use mp4?
-        self.url = self.pic["gfyItem"]["webmUrl"]
-        if self.url == "":      # If we received no URL, the GIF was brought down or otherwise missing
+        if not self.pic:      # If we received no URL, the GIF was brought down or otherwise missing
             self.id = None
             print("Gfycat gif missing")
+            return
+        else:
+            # Can't get the full gif file for some reason so we always use mp4?
+            self.url = self.pic["gfyItem"]["webmUrl"]
+            if self.url == "":      # If we received no URL, the GIF was brought down or otherwise missing
+                self.id = None
+                print("Gfycat gif missing")
 
     def analyze(self):
         duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
@@ -213,7 +218,8 @@ class RedditGif(GifHost):
         return consts.GIF, consts.GIF
 
     def upload_gif(self, gif):
-        return core.hosts.imgur.imgurupload(gif, consts.GIF)
+        return core.hosts.imgur.imgurupload(gif, consts.GIF, nsfw=self.context.nsfw)
+
 
 class RedditVid(GifHost):
     type = consts.REDDITVIDEO

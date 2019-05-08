@@ -9,7 +9,7 @@ def reply(context: CommentContext, gif):
     # If we have a gif, use it's data. Else, use info from context
     if isinstance(gif, GifObject):
         url = gif.url
-        nsfw = gif.nsfw
+        nsfw = gif.nsfw or context.nsfw
     else:
         url = gif
         nsfw = context.nsfw
