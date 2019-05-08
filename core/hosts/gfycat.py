@@ -3,24 +3,19 @@ import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import time
 from math import ceil
+from io import BytesIO
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
-from core.gif import Gif
-from core.hosts import GifHost
+from core.gif import Gif as OldGif
+from core.hosts import GifHost, Gif, GifFile
 from core.regex import REPatterns
 
 ENCODE_TIMEOUT = 3200
 WAIT = 7
 ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
 
-class GfycatHost(GifHost):
-    name = "Gfycat"
-    regex = REPatterns.gfycat
-    url = "https://gfycat.com/{}"
-
-
-class Gfycat:
+class GfycatClient:
     instance = None
 
     def __init__(self):
@@ -78,7 +73,7 @@ class Gfycat:
         except json.decoder.JSONDecodeError as e:
             print(r.text)
             raise
-        self.timeout = int(time.time()) + response["refresh_token_expires_in"]
+        self.timeout = int(time.time()) + response["expires_in"]
         self.access = response["access_token"]
         self.refresh = response["refresh_token"]
         CredentialsLoader.set_credential('gfycat', 'refresh_token', self.refresh)
@@ -110,7 +105,8 @@ class Gfycat:
         url = "https://api.gfycat.com/v1/gfycats/{}".format(id)
         r = requests.get(url, headers=headers)
         if r.status_code != 200:
-            raise Exception("Gfycat - get problem status code {}".format(str(r.status_code)))
+            print("Gfycat - get problem status code {}".format(str(r.status_code)))
+            return None
         return r.json()
 
     def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None):
@@ -132,7 +128,7 @@ class Gfycat:
                 params["nsfw"] = 1
             if audio:
                 params['keepAudio'] = True
-            print("getting gfyname...")
+            print("getting gfyname...", params)
             r = requests.post(url, headers=headers, data=str(params))
             # print(r.text)
             metadata = r.json()
@@ -173,9 +169,19 @@ class Gfycat:
                 raise
             # Sometimes we have to wait
             percentage = 0
+            notfoundo = 5
             for i in range(ENCODE_LOOPS):
                 if ticket["task"] == "encoding":
                     time.sleep(WAIT)
+                    r = requests.get(url, headers=headers)
+                    ticket = r.json()
+                    # print(ticket)
+                    if float(ticket.get('progress', 0)) > percentage:
+                        percentage = float(ticket['progress'])
+                        print(percentage, end=" ")
+                elif ticket['task'] == 'NotFoundo':
+                    print("notfoundo", end=" ")
+                    time.sleep(WAIT * 2)
                     r = requests.get(url, headers=headers)
                     ticket = r.json()
                     # print(ticket)
@@ -215,7 +221,45 @@ class Gfycat:
             break
 
         if tries:
-            return Gif(consts.GFYCAT, image_id, nsfw=nsfw)
+            return OldGif(consts.GFYCAT, image_id, nsfw=nsfw)
         else:
             return None
+
+
+gfycat = GfycatClient.get()
+
+
+class GfycatGif(Gif):
+    def analyze(self) -> bool:
+        self.pic = gfycat.get_gfycat(self.id)
+        if not self.pic:
+            return False
+        self.id = self.pic['gfyItem']['gfyId']
+        self.url = self.pic["gfyItem"]["webmUrl"]
+        self.type = consts.WEBM
+        if self.url == "":  # If we received no URL, the GIF was brought down or otherwise missing
+            print("Gfycat gif missing")
+            return False
+        self.duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
+        frames = self.pic['gfyItem']['numFrames']
+        self.file = BytesIO(requests.get(self.url).content)
+        self.size = self.file.getbuffer().nbytes / 1000000
+        self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration))
+        self.files.append(GifFile(self.file, self.host, consts.GIF, self.size, self.duration, frames))
+        return True
+
+class GfycatHost(GifHost):
+    name = "Gfycat"
+    regex = REPatterns.gfycat
+    url_template = "https://gfycat.com/{}"
+    gif_type = GfycatGif
+    audio = True
+    video_type = consts.WEBM
+    vid_len_limit = 60  # This has been verified now
+    gif_size_limit = 5000   # Garbage num to fix the sort
+    gif_frame_limit = 2100
+
+    @classmethod
+    def upload(cls, file, gif_type, nsfw):
+        return gfycat.upload(file, gif_type, nsfw=nsfw)
 

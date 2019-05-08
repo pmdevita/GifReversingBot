@@ -3,6 +3,7 @@ from datetime import date
 from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit
 
 from core.gif import Gif as Gif_object
+from core.gif import GifHostManager
 from core.credentials import CredentialsLoader
 
 db = Database()
@@ -37,9 +38,23 @@ class Gif(db.Entity):
     total_requests = Optional(int)
     last_requested_date = Optional(date)
 
+class GifHosts(db.Entity):
+    name = PrimaryKey(str)
+
 
 bind_db(db)
 
+
+def sync_hosts():
+    # Double check gifhost bindings
+    ghm = GifHostManager()
+    with db_session:
+        for host in ghm.host_names():
+            q = select(h for h in GifHosts if h.name == host).first()
+            if not q:
+                new = GifHosts(name=host)
+
+sync_hosts()
 
 def check_database(original_gif):
     # Have we reversed this gif before?

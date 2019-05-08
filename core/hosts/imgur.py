@@ -1,7 +1,7 @@
 import time
-import re
 import requests
 import json.decoder
+from io import BytesIO
 
 from imgurpython import ImgurClient as pImgurClient
 from imgurpython.client import API_URL
@@ -13,49 +13,10 @@ from imgurpython.imgur.models.gallery_image import GalleryImage
 from core import constants as consts
 from core.gif import Gif as OldGif
 from core.credentials import CredentialsLoader
-from core.hosts import GifHost, Gif
+from core.hosts import GifHost, Gif, GifFile
+from core.file import get_duration
 from core.regex import REPatterns
 
-
-class ImgurHost(GifHost):
-    name = "Imgur"
-    regex = REPatterns.imgur
-    url = "https://imgur.com/{}.gifv"
-
-    @classmethod
-    def get_id(cls, regex):
-        imgur = ImgurClient.get()
-        # Retrieve the ID
-        imgur_match = regex[0]
-        if imgur_match[4]:  # Image match
-            id = imgur_match[4]
-        elif imgur_match[3]:  # Gallery match
-            gallery = imgur.gallery_item(imgur_match[3])
-            if not isinstance(gallery, GalleryImage):
-                id = gallery.images[0]['id']
-            else:
-                id = gallery.id
-        elif imgur_match[2]:  # Album match
-            album = imgur.get_album(imgur_match[2])
-            id = album.images[0]['id']
-
-        try:
-            pic = imgur.get_image(id)  # take first image from gallery album
-        except ImgurClientError as e:
-            print("Imgur returned 404, deleted image?")
-            if e.status_code == 404:
-                return None
-
-        return id
-
-    @classmethod
-    def get_gif(cls, id=None, regex=None, url=None):
-        if url:
-            regex = cls.regex.findall(url)
-        if regex:
-            gif_id = cls.get_id(regex)
-        if gif_id:
-            return Gif(cls, gif_id, cls.url.format(gif_id))
 
 class ImgurClient(pImgurClient):
     instance = None
@@ -308,6 +269,77 @@ def imgurupload(file, type, nsfw=False):
             gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
         return gif
+
+
+imgur = ImgurClient.get()
+
+
+class ImgurGif(Gif):
+    process_id = True
+
+    def _get_id(self):
+        """Imgur has a few types of IDs so we need to parse for the one we want"""
+        imgur_match = REPatterns.imgur.findall(self.context.url)[0]
+        id = None
+        # Try block for catching imgur 404s
+        try:
+            if imgur_match[4]:  # Image match
+                id = imgur_match[4]
+            elif imgur_match[3]:  # Gallery match
+                gallery = imgur.gallery_item(imgur_match[3])
+                if not isinstance(gallery, GalleryImage):
+                    id = gallery.images[0]['id']  # First image from gallery album
+                else:
+                    id = gallery.id
+            elif imgur_match[2]:  # Album match
+                album = imgur.get_album(imgur_match[2])
+                id = album.images[0]['id']  # First image of album
+
+            self.pic = imgur.get_image(id)  # take first image from gallery album
+
+        except ImgurClientError as e:
+            print("Imgur returned 404, deleted image?", e.status_code)
+            self.pic = None
+            id = None
+
+        return id
+
+    def analyze(self) -> bool:
+        """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
+
+        # pprint(vars(self.pic))
+
+        if not self.pic.animated:
+            print("Not a gif!")
+            return False
+        r = requests.get(self.pic.mp4)
+        file = BytesIO(r.content)
+        self.duration = get_duration(file)
+
+        self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration))
+
+        if self.duration > self.host.vid_len_limit:
+            # Too long to be a mp4, add a gif option
+            r = requests.get(self.pic.gifv[:-1])
+            file = BytesIO(r.content)
+            gif_file = GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration)
+            self.files.insert(0, gif_file)
+
+        return True
+
+
+class ImgurHost(GifHost):
+    name = "Imgur"
+    regex = REPatterns.imgur
+    url_template = "https://imgur.com/{}.gifv"
+    gif_type = ImgurGif
+    vid_len_limit = 31
+    vid_size_limit = 0
+    gif_size_limit = 201
+
+    @classmethod
+    def upload(cls, file, gif_type, nsfw):
+        return imgurupload(file, gif_type, nsfw=nsfw)
 
 
 if __name__ == '__main__':

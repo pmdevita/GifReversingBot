@@ -11,7 +11,9 @@ from core.regex import REPatterns
 class StreamableHost(GifHost):
     name = "Streamable"
     regex = REPatterns.streamable
-    url = "https://streamable.com/{}"
+    url_template = "https://streamable.com/{}"
+    can_gif = False
+    can_vid = False
 
 
 class StreamableClient:
