@@ -36,7 +36,11 @@ def reverse_gif(image, path=False, format=consts.GIF):
     # Get correct fps
     # with open(filename, "rb") as f:
     #     fps = get_fps(f)
-    fps = get_fps(image)
+    # Gross hack, fix it later with integrated GifFile metadata
+    if platform.system() == 'Windows':
+        fps = get_fps(image, "../ffprobe")
+    else:
+        fps = get_fps(image)
     print("FPS:", fps)
 
     print("Exporting frames...")

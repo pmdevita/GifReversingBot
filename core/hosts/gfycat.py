@@ -109,7 +109,7 @@ class GfycatClient:
             return None
         return r.json()
 
-    def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None):
+    def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None, noMd5=None):
         # If we hit a problem, restart this segment
         tries = 3
         while tries:
@@ -128,6 +128,8 @@ class GfycatClient:
                 params["nsfw"] = 1
             if audio:
                 params['keepAudio'] = True
+            if noMd5:
+                params['noMd5'] = True
             print("getting gfyname...", params)
             r = requests.post(url, headers=headers, data=str(params))
             # print(r.text)
