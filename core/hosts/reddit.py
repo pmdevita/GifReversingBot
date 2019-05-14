@@ -5,6 +5,7 @@ from core import constants as consts
 from core.hosts import GifHost, Gif, GifFile
 from core.regex import REPatterns
 from core.file import get_duration, get_fps
+from core.concat import concat
 
 
 class RedditVid(Gif):
@@ -13,6 +14,7 @@ class RedditVid(Gif):
         r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
         submission_id = REPatterns.reddit_submission.findall(r.url)
         url = None
+        audio = False
         if submission_id:
             submission = self.host.ghm.reddit.submission(id=submission_id[0][2])
             if submission.is_video:
@@ -20,13 +22,20 @@ class RedditVid(Gif):
         else:  # Maybe it was deleted?
             print("Deleted?")
             return False
+
+
         r = requests.get(url)
         file = BytesIO(r.content)
+
+        r = requests.get("https://v.redd.it/{}/audio".format(self.id), headers=headers)
+        if r.status_code == 200:
+            file = concat(file, BytesIO(r.content))
+            audio = True
+
         self.type = consts.MP4
-        self.duration = get_duration(file)
         self.size = file.getbuffer().nbytes / 1000000
-        self.files.append(GifFile(file, self.host, self.type, self.size, self.duration))
-        self.files.append(GifFile(file, self.host, consts.GIF, self.size, self.duration))
+        self.files.append(GifFile(file, self.host, self.type, self.size, audio=audio))
+        self.files.append(GifFile(file, self.host, consts.GIF, self.size))
         return True
 
 

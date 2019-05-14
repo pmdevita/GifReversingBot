@@ -2,6 +2,7 @@ import time
 import requests
 import json.decoder
 from io import BytesIO
+from pprint import pprint
 
 from imgurpython import ImgurClient as pImgurClient
 from imgurpython.client import API_URL
@@ -312,7 +313,7 @@ class ImgurGif(Gif):
     def analyze(self) -> bool:
         """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
 
-        pprint(vars(self.pic))
+        pprint(self.pic)
 
         if not self.pic.animated:
             print("Not a gif!")
@@ -343,7 +344,7 @@ class ImgurHost(GifHost):
     gif_size_limit = 201
 
     @classmethod
-    def upload(cls, file, gif_type, nsfw):
+    def upload(cls, file, gif_type, nsfw, audio=False):
         return ImgurGif(cls, imgurupload(file, gif_type, nsfw=nsfw), nsfw=nsfw)
 
 

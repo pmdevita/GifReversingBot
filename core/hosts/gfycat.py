@@ -107,7 +107,7 @@ class GfycatClient:
         if r.status_code != 200:
             print("Gfycat - get problem status code {}".format(str(r.status_code)))
             return None
-        return r.json()
+        return r.json()['gfyItem']
 
     def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None, noMd5=None):
         # If we hit a problem, restart this segment
@@ -235,21 +235,22 @@ gfycat = GfycatClient.get()
 class GfycatGif(Gif):
     def analyze(self) -> bool:
         self.pic = gfycat.get_gfycat(self.id)
-        pprint(vars(self.pic))
         if not self.pic:
             return False
-        self.id = self.pic['gfyItem']['gfyName']
-        self.url = self.pic["gfyItem"]["webmUrl"]
+        self.id = self.pic['gfyName']
+        self.url = self.pic["webmUrl"]
         self.type = consts.WEBM
         if self.url == "":  # If we received no URL, the GIF was brought down or otherwise missing
             print("Gfycat gif missing")
             return False
-        self.duration = self.pic['gfyItem']['numFrames'] / self.pic['gfyItem']['frameRate']
-        frames = self.pic['gfyItem']['numFrames']
+        self.duration = self.pic['numFrames'] / self.pic['frameRate']
+        audio = self.pic['hasAudio']
+        frames = self.pic['numFrames']
         self.file = BytesIO(requests.get(self.url).content)
-        self.size = self.file.getbuffer().nbytes / 1000000
-        self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration))
-        self.files.append(GifFile(self.file, self.host, consts.GIF, self.size, self.duration, frames))
+        self.nsfw = self.nsfw or int(self.pic['nsfw'])
+        self.size = self.pic['webmSize'] / 1000000
+        self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration, audio=audio))
+        self.files.append(GifFile(self.file, self.host, consts.GIF, self.size, self.duration, frames, audio=audio))
         return True
 
 class GfycatHost(GifHost):
@@ -264,6 +265,6 @@ class GfycatHost(GifHost):
     gif_frame_limit = 2100
 
     @classmethod
-    def upload(cls, file, gif_type, nsfw):
-        return GfycatGif(cls, gfycat.upload(file, gif_type, nsfw=nsfw), nsfw=nsfw)
+    def upload(cls, file, gif_type, nsfw, audio=False):
+        return GfycatGif(cls, gfycat.upload(file, gif_type, nsfw=nsfw, audio=audio), nsfw=nsfw)
 

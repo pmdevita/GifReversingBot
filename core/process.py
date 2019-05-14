@@ -143,13 +143,14 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             # reversed_gif = upload_gif_host.upload(f, consts.GIF, new_original_gif.context.nsfw)
     # Reverse it as a video
     else:
-        with reverse_mp4(r, False, format=original_gif_file.type, output=upload_gif_host.video_type) as f:
+        with reverse_mp4(r, original_gif_file.audio, format=original_gif_file.type, output=upload_gif_host.video_type) as f:
             reversed_gif = GifFile(BytesIO(f.read()), original_gif_file.host, upload_gif_host.video_type,
-                                   duration=original_gif_file.duration)
+                                   duration=original_gif_file.duration, audio=original_gif_file.audio)
             # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
 
     reversed_gif, upload_gif_host = ghm.get_upload_host(reversed_gif)
-    reversed_gif = upload_gif_host.upload(reversed_gif.file, reversed_gif.type, new_original_gif.nsfw)
+    reversed_gif = upload_gif_host.upload(reversed_gif.file, reversed_gif.type, new_original_gif.nsfw,
+                                          reversed_gif.audio)
 
     if reversed_gif:
         # Add gif to database

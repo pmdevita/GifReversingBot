@@ -77,4 +77,15 @@ def get_frames(file):
         frames = int(data["streams"][0].get('nb_read_frames', False))
 
 
-    return frames
+def has_audio(file):
+    file.seek(0)
+    audio = False
+    p = subprocess.Popen(
+        ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-show_format"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
+    for i in data['streams']:
+        if i['codec_type'] == 'audio':
+            audio = True
+
+    return audio

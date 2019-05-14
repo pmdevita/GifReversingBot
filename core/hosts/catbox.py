@@ -26,8 +26,9 @@ class CatboxGif(Gif):
 
     def analyze(self):
         r = requests.get(self.url)
-        self.files.append(GifFile(BytesIO(r.content), self, consts.GIF))
-        vid_file = GifFile(BytesIO(r.content), self, self.id.split(".")[-1])
+        file = BytesIO(r.content)
+        self.files.append(GifFile(file, self.host, consts.GIF))
+        vid_file = GifFile(file, self.host, self.id.split(".")[-1], audio=False)
         if self.id[-3:] == consts.GIF:
             self.files.append(vid_file)
         else:
@@ -45,7 +46,7 @@ class CatboxHost(GifHost):
     gif_size_limit = 20
 
     @classmethod
-    def upload(cls, file, gif_type, nsfw):
+    def upload(cls, file, gif_type, nsfw, audio=False):
         file.seek(0)
         mimetype = "image/gif" if gif_type == consts.GIF else "video/" + gif_type
         files = {'reqtype': 'fileupload', 'userhash': catbox_hash, 'fileToUpload': ("file.{}".format(gif_type),

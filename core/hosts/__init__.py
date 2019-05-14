@@ -1,16 +1,23 @@
 import requests
 from io import BytesIO
 from core import constants as consts
-from core.file import get_frames, get_duration
+from core.file import get_frames, get_duration, has_audio
 
 
 class GifFile:
-    def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0):
+    def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0, audio=None):
         self.file = file
         self.file.seek(0)
         self.type = gif_type
         self.size = None
         self.frames = frames
+        if audio is None:
+            self.audio = False
+        else:
+            if audio:
+                self.audio = True
+            else:
+                self.audio = has_audio(self.file)
         if gif_type == consts.GIF and not frames:
             self.frames = get_frames(self.file)
         if size:
@@ -96,7 +103,7 @@ class GifHost:
     gif_frame_limit = 0
 
     @classmethod
-    def upload(cls, file, gif_type, nsfw):
+    def upload(cls, file, gif_type, nsfw, audio=False):
         raise NotImplementedError
 
     @classmethod

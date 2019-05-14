@@ -82,7 +82,10 @@ class GifHostManager:
                 return True
         else:
             if host.can_vid and (host.vid_len_limit >= gif_file.duration or host.vid_len_limit == 0) and \
-               (host.vid_size_limit >= gif_file.size or host.vid_size_limit == 0):
+               (host.vid_size_limit >= gif_file.size or host.vid_size_limit == 0) and \
+                    (host.audio == gif_file.audio or not gif_file.audio):
+                # Audio logic: if they match or if audio is false (meaning it doesn't matter)
+
                 return True
         return False
 

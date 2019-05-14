@@ -143,18 +143,18 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     params = {"loglevel": "error", "audio": ""}
 
     if output == consts.MP4:
-        video['codec'] = "-c:v libx264 -q:v 0"
+        params['codec'] = "-c:v libx264 -q:v 0"
     elif output == consts.WEBM:
-        video['codec'] = "-c:v libvpx -crf 10 -b:v 1M"
+        params['codec'] = "-c:v libvpx -crf 10 -b:v 1M"
 
     if audio:
-        command['audio'] = "-af areverse"
+        params['audio'] = "-af areverse"
 
     # Assemble command
 
     command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio} -y temp.{output}".format(output=output,
                                                                                                           **params)
-
+    print(command)
     command = command.split()
 
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -165,7 +165,8 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     # Weird thing
     if "partial file" in response:
         print("FFMPEG gave weird error, putting in file to reverse")
-        command[4] = "source." + format
+        in_file = "source." + format
+        command[4] = in_file
         mp4.seek(0)
         with open(in_file, 'wb') as f:
             f.write(mp4.read())
@@ -174,6 +175,6 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
         response = p.communicate()[0].decode()
         os.remove(in_file)
 
-    reversed = open(out_file, "rb")
+    reversed = open("temp." + output, "rb")
 
     return reversed

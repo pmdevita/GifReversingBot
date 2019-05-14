@@ -2,6 +2,7 @@ import subprocess
 import os
 import json
 import platform
+from io import BytesIO
 
 if platform.system() == 'Windows':
     ffmpeg = 'ffmpeg.exe'
@@ -29,11 +30,14 @@ def concat(video, audio):
         f.write(audio.read())
 
     p = subprocess.Popen(
-        [ffmpeg, "-loglevel", "panic", "-i", "video.mp4", "-i", "audio.mp4", "-c:v", "copy", "-c:a", "copy", "-y", "output.mp4"]
+        [ffmpeg, "-loglevel", "panic", "-i", "video.mp4", "-i", "audio.mp4", "-c:v", "copy", "-c:a", "copy", "-y",
+         "temp.mp4"]
     )
     response = p.communicate()
 
-    return open("output.mp4", "rb")
+    with open("temp.mp4", "rb") as f:
+        file = BytesIO(f.read())
+    return file
 
 def vid_to_gif(image, path=False):
     """
