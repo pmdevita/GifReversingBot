@@ -10,7 +10,20 @@ def get_duration(filestream):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     output = p.communicate(input=filestream.read())[0].decode("utf-8")
     data = json.loads(output)
-    return float(data['format']['duration'])
+    if not data['format'].get('duration', None):
+        # Can happen sometimes if the file isn't on the drive
+        with open('tempfile', 'wb') as f:
+            filestream.seek(0)
+            f.write(filestream.read())
+        p = subprocess.Popen(
+            ["ffprobe", "-i", "tempfile", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        output = p.communicate()[0].decode("utf-8")
+        data = json.loads(output)
+        os.remove('tempfile')
+    if data['format'].get('duration', None):
+        return float(data['format']['duration'])
+    return 0
 
 
 def resetfile(file):
@@ -37,7 +50,7 @@ def get_fps(filestream, ffprobe_path="ffprobe"):
         p = subprocess.Popen(
             [ffprobe_path, "-i", "tempfile", "-v", "quiet", "-print_format", "json", "-show_streams"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        data = json.loads(p.communicate(input=filestream.read())[0].decode("utf-8"))
+        data = json.loads(p.communicate()[0].decode("utf-8"))
         raw_fps = data["streams"][0]["avg_frame_rate"].split("/")
         os.remove('tempfile')
 
@@ -60,7 +73,7 @@ def get_frames(file):
         p = subprocess.Popen(
             ["ffprobe", "-i", "tempfile", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
+        data = json.loads(p.communicate()[0].decode("utf-8"))
         frames = int(data["streams"][0].get('nb_read_frames', False))
 
 

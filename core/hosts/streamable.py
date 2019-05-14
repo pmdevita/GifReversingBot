@@ -45,7 +45,7 @@ class StreamableClient:
         print("Uploading to streamable...")
         r = requests.post('https://api.streamable.com/upload', headers=self.headers, files=files, data=data, auth=self.auth)
         if r.text:
-            return Gif(consts.STREAMABLE, r.json()['shortcode'])
+            return r.json()['shortcode']
 
     def upload_link(self, link, title):
         r = requests.get('https://api.streamable.com/import', headers=self.headers, params={'url': link, 'title': title}, auth=self.auth)

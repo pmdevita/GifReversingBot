@@ -13,6 +13,7 @@ from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 
 
 def process_comment(reddit, comment=None, queue=None, original_context=None):
+    ghm = GifHostManager(reddit)
     if not original_context:    # If we were not provided context, make our own
         # Check if comment is deleted
         if not comment.author:
@@ -23,7 +24,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         print("New request by " + comment.author.name)
 
         # Create the comment context object
-        context = CommentContext(reddit, comment)
+        context = CommentContext(reddit, comment, ghm)
         if not context.url:         # Did our search return nothing?
             print("Didn't find a URL")
             return USER_FAILURE
@@ -36,24 +37,24 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         context = original_context
 
     # Create object to grab gif from host
-    print(context.url)
-    gif_host = GifHost.open(context, reddit)
+    # print(context.url)
+    # gif_host = GifHost.open(context, reddit)
 
-    ghm = GifHostManager(reddit)
-    new_original_gif = ghm.extract_gif(context.url, context)
+    # new_original_gif = ghm.extract_gif(context.url, context=context)
+    new_original_gif = context.url
     print(new_original_gif)
 
     # If the link was not recognized, return
-    if not gif_host:
-        return USER_FAILURE
+    # if not gif_host:
+    #     return USER_FAILURE
 
     if not new_original_gif:
         return USER_FAILURE
 
     # If the gif was unable to be acquired, return
-    original_gif = gif_host.get_gif()
-    if not original_gif:
-        return USER_FAILURE
+    # original_gif = gif_host.get_gif()
+    # if not original_gif:
+    #     return USER_FAILURE
 
     if not new_original_gif.id:
         return USER_FAILURE
@@ -61,16 +62,16 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
     if queue:
         # Add to queue
         print("Adding to queue...")
-        queue.add_job(context.to_json(), original_gif)
+        queue.add_job(context.to_json(), new_original_gif)
         return SUCCESS
 
     # Check database for gif before we reverse it
-    gif = check_database(original_gif)
+    gif = check_database(new_original_gif)
 
     # Requires new database setup
     # db_gif = check_database(new_original_gif)
 
-    if gif: # db_gif
+    if gif:  # db_gif
         # If we were asked to reupload, double check the gif
         if context.reupload:
             print("Doing a reupload check...")
@@ -90,11 +91,11 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             return SUCCESS
 
     # Analyze how the gif should be reversed
-    in_format, out_format = gif_host.analyze()
+    # in_format, out_format = gif_host.analyze()
 
     # If there was some problem analyzing, exit
-    if not in_format or not out_format:
-        return USER_FAILURE
+    # if not in_format or not out_format:
+    #     return USER_FAILURE
 
     if not new_original_gif.analyze():
         return USER_FAILURE
@@ -103,15 +104,15 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
 
     reversed_gif = None
 
-    if isinstance(gif_host.url, str):
-        r = requests.get(gif_host.url)
-    elif isinstance(gif_host.url, requests.Response):
-        r = gif_host.url
-
-    # If we 404, it must not exist
-    if r.status_code == 404:
-        print("Gif not found at URL")
-        return USER_FAILURE
+    # if isinstance(gif_host.url, str):
+    #     r = requests.get(gif_host.url)
+    # elif isinstance(gif_host.url, requests.Response):
+    #     r = gif_host.url
+    #
+    # # If we 404, it must not exist
+    # if r.status_code == 404:
+    #     print("Gif not found at URL")
+    #     return USER_FAILURE
 
     r = original_gif_file.file
 
@@ -142,18 +143,18 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             # reversed_gif = upload_gif_host.upload(f, consts.GIF, new_original_gif.context.nsfw)
     # Reverse it as a video
     else:
-        with reverse_mp4(r, original_gif.audio, format=original_gif_file.type, output=upload_gif_host.video_type) as f:
+        with reverse_mp4(r, False, format=original_gif_file.type, output=upload_gif_host.video_type) as f:
             reversed_gif = GifFile(BytesIO(f.read()), original_gif_file.host, upload_gif_host.video_type,
                                    duration=original_gif_file.duration)
             # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
 
     reversed_gif, upload_gif_host = ghm.get_upload_host(reversed_gif)
-    reversed_gif = upload_gif_host.upload(reversed_gif.file, reversed_gif.type, new_original_gif.context.nsfw)
+    reversed_gif = upload_gif_host.upload(reversed_gif.file, reversed_gif.type, new_original_gif.nsfw)
 
     if reversed_gif:
         # Add gif to database
-        if reversed_gif.log:
-            add_to_database(gif_host.get_gif(), reversed_gif)
+        # if reversed_gif.log:
+        add_to_database(new_original_gif, reversed_gif)
         # Reply
         print("Replying!", reversed_gif.url)
         reply(context, reversed_gif)

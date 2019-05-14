@@ -4,10 +4,10 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 import time
 from math import ceil
 from io import BytesIO
+from pprint import pprint
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
-from core.gif import Gif as OldGif
 from core.hosts import GifHost, Gif, GifFile
 from core.regex import REPatterns
 
@@ -223,7 +223,8 @@ class GfycatClient:
             break
 
         if tries:
-            return OldGif(consts.GFYCAT, image_id, nsfw=nsfw)
+            # return OldGif(consts.GFYCAT, image_id, nsfw=nsfw)
+            return image_id
         else:
             return None
 
@@ -234,9 +235,10 @@ gfycat = GfycatClient.get()
 class GfycatGif(Gif):
     def analyze(self) -> bool:
         self.pic = gfycat.get_gfycat(self.id)
+        pprint(vars(self.pic))
         if not self.pic:
             return False
-        self.id = self.pic['gfyItem']['gfyId']
+        self.id = self.pic['gfyItem']['gfyName']
         self.url = self.pic["gfyItem"]["webmUrl"]
         self.type = consts.WEBM
         if self.url == "":  # If we received no URL, the GIF was brought down or otherwise missing
@@ -263,5 +265,5 @@ class GfycatHost(GifHost):
 
     @classmethod
     def upload(cls, file, gif_type, nsfw):
-        return gfycat.upload(file, gif_type, nsfw=nsfw)
+        return GfycatGif(cls, gfycat.upload(file, gif_type, nsfw=nsfw), nsfw=nsfw)
 

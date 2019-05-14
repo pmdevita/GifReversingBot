@@ -128,6 +128,7 @@ def reverse_gif(image, path=False, format=consts.GIF):
     else:
         return open("temp.gif", "rb")
 
+
 def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     """
     :param mp4: filestream to reverse (must be a mp4)
@@ -135,38 +136,36 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     """
     print("Reversing {} into {}...".format(format, output))
 
-    loglevel = "error"
-
     mp4.seek(0)
+
+    # Create the params for the command
+
+    params = {"loglevel": "error", "audio": ""}
+
     if output == consts.MP4:
-        in_file = "source.mp4"
-        out_file = "temp.mp4"
-        mute = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-c:v", "libx264",
-                "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
-        sound = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libx264",
-                 "-q:v", "0", "-y", "-f", "mp4", "temp.mp4"]
+        video['codec'] = "-c:v libx264 -q:v 0"
     elif output == consts.WEBM:
-        in_file = "source.webm"
-        out_file = "temp.webm"
-        mute = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-c:v", "libvpx",
-                "-q:v", "0", "-y", "-f", "webm", "temp.webm"]
-        sound = ["ffmpeg", "-loglevel", loglevel, "-i", "pipe:0", "-vf", "reverse", "-af", "areverse", "-c:v", "libvpx",
-                 "-q:v", "0", "-y", "-f", "webm", "temp.webm"]
+        video['codec'] = "-c:v libvpx -crf 10 -b:v 1M"
 
     if audio:
-        command = sound
-    else:
-        command = mute
+        command['audio'] = "-af areverse"
+
+    # Assemble command
+
+    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio} -y temp.{output}".format(output=output,
+                                                                                                          **params)
+
+    command = command.split()
 
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     response = p.communicate(input=mp4.read())[0].decode()
 
-    print(response)
+    # print(response)
 
     # Weird thing
     if "partial file" in response:
         print("FFMPEG gave weird error, putting in file to reverse")
-        command[4] = in_file
+        command[4] = "source." + format
         mp4.seek(0)
         with open(in_file, 'wb') as f:
             f.write(mp4.read())

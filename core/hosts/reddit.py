@@ -39,26 +39,37 @@ class RedditVideoHost(GifHost):
     can_vid = False
 
     @classmethod
-    def get_gif(cls, id=None, regex=None, url=None, context=None) -> Gif:
-        # Parse submission urls
-        if REPatterns.reddit_submission.findall(url):
-            reddit = cls.ghm.reddit
-            submission = reddit.submission(REPatterns.reddit_submission.findall(context.url)[0][2])
-            if submission.media:
-                if submission.media.get('reddit_video', False):
-                    # Not a reddit gif
-                    return cls.ghm.extract_gif(submission.media['reddit_video']['fallback_url'], context=context)
-            url = submission.url
-        if url:
-            regex = cls.regex.findall(url)
+    def get_gif(cls, id=None, regex=None, text=None, **kwargs) -> Gif:
+        url = None
+        if text:
+            # Parse submission urls
+            subregex = REPatterns.reddit_submission.findall(text)
+            if subregex:
+                reddit = cls.ghm.reddit
+                submission = reddit.submission(subregex[0][2])
+                regex = cls.regex.findall(submission.url)
+                if regex:
+                    # Modify text to be a v.redd.it link for down the line parsing
+                    text = submission.url
+                else:
+                    # Not a reddit vid
+                    return cls.ghm.extract_gif(submission.url, **kwargs)
+            regex = cls.regex.findall(text)
         if regex:
-            gif_id = regex[0]
-        if gif_id:
-            return cls.gif_type(cls, gif_id, context=context)
+            id = regex[0]
+            # For whatever terrible reason, fullmatch doesn't work with this regex statement. No idea why. God help me
+            # url = cls.regex.fullmatch(text).string
+        if id:
+            return cls.gif_type(cls, id, url=url, **kwargs)
 
     @classmethod
     def match(cls, text):
-        return len(cls.regex.findall(text)) != 0 or len(REPatterns.reddit_submission.findall(text)) != 0
+        # print(cls.regex.findall(text), REPatterns.reddit_submission.findall(text))
+        sub = REPatterns.reddit_submission.findall(text)
+        if sub:
+            if sub[0][2]:
+                return True
+        return len(cls.regex.findall(text)) != 0
 
 class RedditGif(Gif):
     def analyze(self) -> bool:

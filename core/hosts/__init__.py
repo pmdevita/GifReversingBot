@@ -1,7 +1,8 @@
 import requests
 from io import BytesIO
 from core import constants as consts
-from core.file import get_frames
+from core.file import get_frames, get_duration
+
 
 class GifFile:
     def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0):
@@ -17,16 +18,25 @@ class GifFile:
         else:
             if isinstance(file, BytesIO):
                 self.size = file.getbuffer().nbytes / 1000000
-        self.duration = duration
+        if duration:
+            self.duration = duration
+        else:
+            self.duration = get_duration(self.file)
         self.host = host
 
 
 class Gif:
     process_id = False
 
-    def __init__(self, host, id, context=None, url=None):
+    def __init__(self, host, id, context=None, url=None, nsfw=False):
         self.host = host
         self.context = context
+        if self.context:
+            self.nsfw = self.context.nsfw or nsfw
+            if not url:
+                url = self.context.url
+        else:
+            self.nsfw = nsfw
 
         self.pic = None
         self.file = None
@@ -35,17 +45,21 @@ class Gif:
         self.duration = None
         self.files = []
 
-        if not self.process_id:
-            self.id = id
+        if not self.process_id or not url:  # URL is required to do ID processing. If we are
+            self.id = id                         # missing
         else:
-            self.id = self._get_id()
+            self.id = self._get_id(id, url)
         self.url = self.host.url_template.format(self.id)
-
 
     def __repr__(self):
         return "{}-{}".format(self.host.name, self.id)
 
-    def _get_id(self):
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.id == other.id
+        return False
+
+    def _get_id(self, id, url):
         """Set this object's id variable to the pic's ID"""
         raise NotImplementedError
 
@@ -86,13 +100,15 @@ class GifHost:
         raise NotImplementedError
 
     @classmethod
-    def get_gif(cls, id=None, regex=None, url=None, context=None) -> Gif:
-        if url:
-            regex = cls.regex.findall(url)
+    def get_gif(cls, id=None, regex=None, text=None, **kwargs) -> Gif:
+        url = None
+        if text:
+            regex = cls.regex.findall(text)
         if regex:
-            gif_id = regex[0]
-        if gif_id:
-            return cls.gif_type(cls, gif_id, context=context)
+            id = regex[0]
+            url = cls.regex.search(text).group()
+        if id:
+            return cls.gif_type(cls, id, url=url, **kwargs)
 
     @classmethod
     def match(cls, text):

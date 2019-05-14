@@ -13,13 +13,14 @@ class GifHostManager:
     reddit = None
     vid_priority = []
     gif_priority = []
+    host_names = []
 
     def __init__(self, reddit=None):
         if not self.hosts:
             # Dynamically load gif hosts
             files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "hosts"))
             for f in files:
-                # __init__.py or __pycache__
+                #  __init__.py or __pycache__
                 if f[:2] != "__" and f[-3:] == ".py":
                     i = importlib.import_module("." + f[:-3], 'core.hosts')
             hosts = []
@@ -28,22 +29,25 @@ class GifHostManager:
                 hosts.append([host, host.priority])
             GifHostManager.hosts = [i[0] for i in sorted(hosts, key=itemgetter(1))]
             # Create the priority lists
-            vid_priority = [[i, i.vid_len_limit] for i in self.hosts if i.can_vid]
-            GifHostManager.vid_priority = [i[0] for i in sorted(vid_priority, key=itemgetter(1))]
-            gif_priority = [[i, i.gif_size_limit] for i in self.hosts if i.can_gif]
-            GifHostManager.gif_priority = [i[0] for i in sorted(gif_priority, key=itemgetter(1))]
-            print("priority", self.hosts, self.vid_priority, sorted(gif_priority, key=itemgetter(1)))
+            # vid_priority = [[i, i.vid_len_limit] for i in self.hosts if i.can_vid]
+            GifHostManager.vid_priority = [i for i in sorted(GifHostManager.hosts, key=lambda x: (x.priority,
+                                           x.vid_len_limit == 0, x.vid_len_limit)) if i.can_vid]
+            # gif_priority = [[i, i.gif_size_limit] for i in self.hosts if i.can_gif]
+            GifHostManager.gif_priority = [i for i in sorted(GifHostManager.hosts, key=lambda x: (x.priority,
+                                           x.gif_size_limit == 0, x.gif_size_limit)) if i.can_gif]
+            # GifHostManager.gif_priority = [i[0] for i in sorted(gif_priority, key=itemgetter(1))]
+            GifHostManager.host_names = {i.name: i for i in self.hosts}
+            print("priority", self.hosts, self.vid_priority, self.gif_priority)
         if not self.reddit:
             GifHostManager.reddit = reddit
 
-    def host_names(self):
-        return [i.name for i in self.hosts]
+    # def host_names(self):
+    #     return [i.name for i in self.hosts]
 
-    def extract_gif(self, text, context=None) -> Optional[NewGif]:
+    def extract_gif(self, text, **kwargs) -> Optional[NewGif]:
         for host in self.hosts:
             if host.match(text):
-                return host.get_gif(url=text, context=context)
-        print("Unknown URL Type")
+                return host.get_gif(text=text, **kwargs)
         return None
 
     def get_upload_host(self, gif_files) -> [Optional[GifFile], Optional[GifHost]]:
@@ -67,7 +71,6 @@ class GifHostManager:
                 else:
                     print("Not within params of host", host, gif_file)
         return None, None
-
 
     def _within_host_params(self, host: GifHost, gif_file: GifFile):
         """Determine whether a GifFile is within a GifHost's limitations"""

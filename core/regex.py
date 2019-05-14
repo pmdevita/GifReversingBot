@@ -25,7 +25,7 @@ class REPatterns:
     reddit_gif = re.compile("http(?:s)?://i.redd.it/(.*?).gif")
 
     # Reddit Video
-    reddit_vid = re.compile("http(?:s)?://v.redd.it/(\w+)")
+    reddit_vid = re.compile("https?://v.redd.it/(\w+)")
 
     # Streamable
     streamable = re.compile("http(?:s)?://streamable.com/(.*)")
@@ -37,7 +37,7 @@ class REPatterns:
     link = re.compile("\[.*?\] *\n? *\((.*?)\)")
 
     # Reddit submission link
-    reddit_submission = re.compile("^http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/[\w%]+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)(.+))?$")
+    reddit_submission = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/[\w%]+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)(.+))?")
 
     # Gif link
     link_gif = re.compile("(https?://\S*\.gif)")
@@ -50,5 +50,11 @@ class REPatterns:
 
 
 if __name__ == '__main__':
-    if REPatterns.reddit_submission.findall("https://www.reddit.com/r/gifs")[0][2]:
-        print("hi")
+    print(type(REPatterns.reddit_submission.search("Here is your gif!\nhttps://files.catbox.moe/ohpyy5.mp4\n\n---\n\n^(I am a bot.) [^(Report an issue)](https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=Add a link to the gif or comment in your message%2C I'm not always sure which request is being reported. Thanks for helping me out!)").group()))
+    r = REPatterns.reddit_submission.findall("https://www.redddit.com/r/pmdevita/comments/bn7x1a/")[0]
+    print(r)
+    for i in r:
+        if i:
+            print("hi")
+
+

@@ -9,8 +9,9 @@ from core.hosts import GifHost
 from pprint import pprint
 
 class CommentContext:
-    def __init__(self, reddit, comment):
+    def __init__(self, reddit, comment, ghm):
         """Determine the context of a summon by grabbing what comment/submission and url it is referring too"""
+        self.ghm = ghm
         self.comment = comment
         self.rereverse = False
         self.unnecessary_manual = False
@@ -61,15 +62,16 @@ class CommentContext:
                     if is_nsfw_text(reddit_object.selftext) and not checking_manual:
                         self.nsfw = True
                     # Search text for URL
-                    url = old_find_url(reddit_object.selftext)
+                    url = self.ghm.extract_gif(reddit_object.selftext, nsfw=self.nsfw)
                     # If found
                     if url:
                         # Return it
                         return url
                 # Else if the post is a link post, check it's URL
                 else:
-                    if parse.old_validate_url(reddit_object.url):
-                        return reddit_object.url
+                    url = self.ghm.extract_gif(reddit_object.url, nsfw=self.nsfw)
+                    if url:
+                        return url
                     else:
                         return None
             except RecursionError:
@@ -99,7 +101,7 @@ class CommentContext:
                     reddit_object.mod.remove()
 
             # Search text for URL
-            url = old_find_url(reddit_object.body)
+            url = self.ghm.extract_gif(reddit_object.body, nsfw=self.nsfw)
             # If found
             if url:
                 # Return it

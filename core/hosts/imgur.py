@@ -193,7 +193,7 @@ def imgurupload(file, type, nsfw=False):
             # image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
             #                        "doesn't work, please report an issue. Thanks!"
             # input()
-            gif = OldGif(consts.IMGUR, image_id, url=final_url, log=True, nsfw=nsfw)
+            # gif = OldGif(consts.IMGUR, image_id, url=final_url, log=True, nsfw=nsfw)
 
         elif type == consts.MP4:
             # watch ticket to get link
@@ -268,7 +268,7 @@ def imgurupload(file, type, nsfw=False):
             # image_url = "https://imgur.com/{}.gifv".format(image_id)
             gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
-        return gif
+        return image_id
 
 
 imgur = ImgurClient.get()
@@ -277,9 +277,14 @@ imgur = ImgurClient.get()
 class ImgurGif(Gif):
     process_id = True
 
-    def _get_id(self):
+    def _get_id(self, id, url):
         """Imgur has a few types of IDs so we need to parse for the one we want"""
-        imgur_match = REPatterns.imgur.findall(self.context.url)[0]
+        if isinstance(id, list):
+            imgur_match = id
+        elif isinstance(id, str):
+            return id
+        else:
+            imgur_match = REPatterns.imgur.findall(url)[0]
         id = None
         # Try block for catching imgur 404s
         try:
@@ -307,7 +312,7 @@ class ImgurGif(Gif):
     def analyze(self) -> bool:
         """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
 
-        # pprint(vars(self.pic))
+        pprint(vars(self.pic))
 
         if not self.pic.animated:
             print("Not a gif!")
@@ -322,7 +327,7 @@ class ImgurGif(Gif):
             # Too long to be a mp4, add a gif option
             r = requests.get(self.pic.gifv[:-1])
             file = BytesIO(r.content)
-            gif_file = GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration)
+            gif_file = GifFile(file, host=self.host, gif_type=consts.GIF, duration=self.duration)
             self.files.insert(0, gif_file)
 
         return True
@@ -339,7 +344,7 @@ class ImgurHost(GifHost):
 
     @classmethod
     def upload(cls, file, gif_type, nsfw):
-        return imgurupload(file, gif_type, nsfw=nsfw)
+        return ImgurGif(cls, imgurupload(file, gif_type, nsfw=nsfw), nsfw=nsfw)
 
 
 if __name__ == '__main__':
