@@ -8,7 +8,7 @@ from core.gif_host import GifHost
 from core.reverse import reverse_mp4, reverse_gif
 from core.history import check_database, add_to_database, delete_from_database
 from core import constants as consts
-from core.hosts import GifFile
+from core.hosts import GifFile, Gif
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 
 
@@ -75,7 +75,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         # If we were asked to reupload, double check the gif
         if context.reupload:
             print("Doing a reupload check...")
-            if not is_reupload_needed(gif, reddit):
+            if not is_reupload_needed(reddit, gif):
                 # No reupload needed, do normal stuff
                 reply(context, gif)
                 print("No reupload needed")
@@ -173,19 +173,8 @@ def process_mod_invite(reddit, message):
         print("Accepted moderatership at", subreddit_name)
         return subreddit_name
 
-def is_reupload_needed(gif, reddit):
-    in_format, out_format = None, None
-    # The gif should return None if missing
-    original_gif_host = GifHost.from_gif(gif, reddit)
-    # If host grabbing was successful
-    if original_gif_host:
-        original_gif = original_gif_host.get_gif()
-        # If gif grabbing was successful
-        if original_gif:
-            in_format, out_format = original_gif_host.analyze()
-            # If analysis was successful
-            if in_format and out_format:
-                # No need to reupload
-                return False
-    # We need to reupload
+def is_reupload_needed(reddit, gif: Gif):
+    if gif.id:
+        if gif.analyze():
+            return False
     return True

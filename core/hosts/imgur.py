@@ -313,7 +313,7 @@ class ImgurGif(Gif):
     def analyze(self) -> bool:
         """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
 
-        pprint(self.pic)
+        pprint(vars(self.pic))
 
         if not self.pic.animated:
             print("Not a gif!")

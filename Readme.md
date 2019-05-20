@@ -9,7 +9,7 @@ Create a file named `credentials.ini` in the root directory with the following c
 ```ini
 [general]
 mode = development|production
-operator = username to be pinged on crash
+operator = username to be pinged on crash/other stuff
 
 [database]
 type = sqlite|mysql
@@ -37,6 +37,9 @@ gfycat_secret = gfycat secret
 [streamable]
 email = streamable account email
 password = password
+
+[catbox]
+hash = your catbox account hash
 
 ```
 
@@ -68,3 +71,11 @@ For gifs, it exports each frame with FFmpeg and then reassembles them with gifsk
 it's very slow and so this process is usually avoided. The bot chooses a reversal method by making an educated guess 
 as to whether the source was originally a gif or an mp4. 
 
+### Gif Host Library
+
+v3 of GifReversingBot introduces the new Gif Host Library, a new implementation of the code used to describe gifs and 
+hosting websites. It aims to share as much code as possible between the sites, reducing implementation efforts as well 
+as surface area for bugs. Hosts define several properties such as how to parse their links, upload capabilities,and 
+limits. Instead of hard coding where the bot should upload gifs for every host, it is now decided dynamically through 
+the properties of a gif, limits of the hosting sites, and other priorities. It's fairly sturdy even though it's new 
+and abstracts away many annoyances, differences, and difficulties managing the gif host sites.

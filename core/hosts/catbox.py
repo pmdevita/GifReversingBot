@@ -35,6 +35,7 @@ class CatboxGif(Gif):
             self.files.insert(0, vid_file)
         return True
 
+
 class CatboxHost(GifHost):
     name = "Catbox"
     regex = re.compile("https?://files\.catbox\.moe/([a-zA-Z0-9]*\.[a-zA-Z0-9]{3,4})")

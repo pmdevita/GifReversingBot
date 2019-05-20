@@ -1,20 +1,10 @@
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-
+from io import BytesIO
 from core.credentials import CredentialsLoader
 from core import constants as consts
-from core.gif import Gif
-from core.hosts import GifHost
+from core.hosts import GifHost, Gif, GifFile
 from core.regex import REPatterns
-
-
-class StreamableHost(GifHost):
-    name = "Streamable"
-    regex = REPatterns.streamable
-    url_template = "https://streamable.com/{}"
-    can_gif = False
-    can_vid = False
-
 
 class StreamableClient:
     instance = None
@@ -32,7 +22,8 @@ class StreamableClient:
 
     def download_video(self, id):
         r = requests.get('https://api.streamable.com/videos/{}'.format(id), headers=self.headers, auth=self.auth)
-        return "https:{}".format(r.json()['files']['mp4']['url'])
+        json = r.json()
+        return r.json()['files']['mp4']
 
     def upload_file(self, filestream, title):
         # tries = 3
@@ -50,3 +41,24 @@ class StreamableClient:
     def upload_link(self, link, title):
         r = requests.get('https://api.streamable.com/import', headers=self.headers, params={'url': link, 'title': title}, auth=self.auth)
         print(r.text)
+
+streamable = StreamableClient()
+
+class StreamableGif(Gif):
+    def analyze(self):
+        info = streamable.download_video(self.id)
+        file = BytesIO(requests.get("https:" + info['url']).content)
+        self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, audio=False, duration=info['duration'],
+                                  size=info['size']/1000000))
+        return True
+
+
+class StreamableHost(GifHost):
+    name = "Streamable"
+    regex = REPatterns.streamable
+    url_template = "https://streamable.com/{}"
+    audio = True
+    gif_type = StreamableGif
+    can_gif = False
+    can_vid = False
+

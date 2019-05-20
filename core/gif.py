@@ -37,7 +37,7 @@ class GifHostManager:
                                            x.gif_size_limit == 0, x.gif_size_limit)) if i.can_gif]
             # GifHostManager.gif_priority = [i[0] for i in sorted(gif_priority, key=itemgetter(1))]
             GifHostManager.host_names = {i.name: i for i in self.hosts}
-            print("priority", self.hosts, self.vid_priority, self.gif_priority)
+            # print("priority", self.hosts, self.vid_priority, self.gif_priority)
         if not self.reddit:
             GifHostManager.reddit = reddit
 

@@ -145,7 +145,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     if output == consts.MP4:
         params['codec'] = "-c:v libx264 -q:v 0"
     elif output == consts.WEBM:
-        params['codec'] = "-c:v libvpx -crf 10 -b:v 1M"
+        params['codec'] = "-c:v libvpx -crf 8 -b:v 1500K"
 
     if audio:
         params['audio'] = "-af areverse"

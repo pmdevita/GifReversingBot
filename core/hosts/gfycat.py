@@ -247,6 +247,9 @@ class GfycatGif(Gif):
         audio = self.pic['hasAudio']
         frames = self.pic['numFrames']
         self.file = BytesIO(requests.get(self.url).content)
+        if int(self.pic['nsfw']):
+            print("Gfycat says it's nsfw")
+            pprint(self.pic)
         self.nsfw = self.nsfw or int(self.pic['nsfw'])
         self.size = self.pic['webmSize'] / 1000000
         self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration, audio=audio))
@@ -261,7 +264,7 @@ class GfycatHost(GifHost):
     audio = True
     video_type = consts.WEBM
     vid_len_limit = 60  # This has been verified now
-    gif_size_limit = 5000   # Garbage num to fix the sort
+    gif_size_limit = 5000   # Gfycat doesn't have a real limit but I doubt anything higher than this will work
     gif_frame_limit = 2100
 
     @classmethod

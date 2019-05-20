@@ -75,6 +75,7 @@ def get_frames(file):
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         data = json.loads(p.communicate()[0].decode("utf-8"))
         frames = int(data["streams"][0].get('nb_read_frames', False))
+    return frames
 
 
 def has_audio(file):
