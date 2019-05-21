@@ -249,7 +249,7 @@ class GfycatGif(Gif):
         self.file = BytesIO(requests.get(self.url).content)
         if int(self.pic['nsfw']):
             print("Gfycat says it's nsfw")
-            pprint(self.pic)
+            # pprint(self.pic)
         self.nsfw = self.nsfw or int(self.pic['nsfw'])
         self.size = self.pic['webmSize'] / 1000000
         self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration, audio=audio))
@@ -269,5 +269,7 @@ class GfycatHost(GifHost):
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
-        return GfycatGif(cls, gfycat.upload(file, gif_type, nsfw=nsfw, audio=audio), nsfw=nsfw)
+        id = gfycat.upload(file, gif_type, nsfw=nsfw, audio=audio)
+        if id:
+            return GfycatGif(cls, id, nsfw=nsfw)
 
