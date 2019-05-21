@@ -54,15 +54,16 @@ class RedditVideoHost(GifHost):
             # Parse submission urls
             subregex = REPatterns.reddit_submission.findall(text)
             if subregex:
-                reddit = cls.ghm.reddit
-                submission = reddit.submission(subregex[0][2])
-                regex = cls.regex.findall(submission.url)
-                if regex:
-                    # Modify text to be a v.redd.it link for down the line parsing
-                    text = submission.url
-                else:
-                    # Not a reddit vid
-                    return cls.ghm.extract_gif(submission.url, **kwargs)
+                if subregex[0][2]:
+                    reddit = cls.ghm.reddit
+                    submission = reddit.submission(subregex[0][2])
+                    regex = cls.regex.findall(submission.url)
+                    if regex:
+                        # Modify text to be a v.redd.it link for down the line parsing
+                        text = submission.url
+                    else:
+                        # Not a reddit vid
+                        return cls.ghm.extract_gif(submission.url, **kwargs)
             regex = cls.regex.findall(text)
         if regex:
             id = regex[0]
