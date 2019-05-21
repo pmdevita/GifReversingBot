@@ -347,7 +347,7 @@ class ImgurHost(GifHost):
     def upload(cls, file, gif_type, nsfw, audio=False):
         id = imgurupload(file, gif_type, nsfw=nsfw)
         if id:
-            return ImgurGif(cls, imgurupload(file, gif_type, nsfw=nsfw), nsfw=nsfw)
+            return ImgurGif(cls, id, nsfw=nsfw)
 
 
 if __name__ == '__main__':

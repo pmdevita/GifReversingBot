@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from operator import itemgetter
 
 import os
@@ -50,7 +50,7 @@ class GifHostManager:
                 return host.get_gif(text=text, **kwargs)
         return None
 
-    def get_upload_host(self, gif_files) -> [Optional[GifFile], Optional[GifHost]]:
+    def get_upload_host(self, gif_files, ignore: Optional[List[GifHost]] = None) -> [Optional[GifFile], Optional[GifHost]]:
         """Return a host that can suitably upload a file of these parameters"""
         if isinstance(gif_files, GifFile):
             gif_files = [gif_files]
@@ -63,6 +63,9 @@ class GifHostManager:
             if gif_file.host in priority:
                 priority.remove(gif_file.host)
                 priority.insert(0, gif_file.host)
+            if ignore:
+                for gif_host in ignore:
+                    priority.remove(gif_host)
 
             for host in priority:
                 if self._within_host_params(host, gif_file):
