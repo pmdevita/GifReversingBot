@@ -250,7 +250,7 @@ class GfycatGif(Gif):
         if int(self.pic['nsfw']):
             print("Gfycat says it's nsfw")
             # pprint(self.pic)
-        self.nsfw = self.nsfw or int(self.pic['nsfw'])
+        # self.nsfw = self.nsfw or int(self.pic['nsfw']) # Gfycat's NSFW flag is essentially useless
         self.size = self.pic['webmSize'] / 1000000
         self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration, audio=audio))
         self.files.append(GifFile(self.file, self.host, consts.GIF, self.size, self.duration, frames, audio=audio))

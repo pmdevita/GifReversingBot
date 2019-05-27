@@ -322,7 +322,8 @@ class ImgurGif(Gif):
         file = BytesIO(r.content)
         self.duration = get_duration(file)
 
-        self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration))
+        self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration,
+                                  size=self.pic.mp4_size/1000000))
 
         if self.duration > self.host.vid_len_limit:
             # Too long to be a mp4, add a gif option

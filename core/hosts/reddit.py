@@ -63,6 +63,8 @@ class RedditVideoHost(GifHost):
                         text = submission.url
                     else:
                         # Not a reddit vid
+                        if submission.is_self:      # Selfposts just link to themselves, are not a redirect
+                            return None
                         return cls.ghm.extract_gif(submission.url, **kwargs)
             regex = cls.regex.findall(text)
         if regex:

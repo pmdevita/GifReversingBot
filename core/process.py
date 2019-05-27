@@ -138,27 +138,31 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         # With reversed gif
         with reverse_gif(r, format=original_gif_file.type) as f:
             # Give to gif_host's uploader
-            reversed_gif = GifFile(BytesIO(f.read()), original_gif_file.host, consts.GIF,
+            reversed_gif_file = GifFile(BytesIO(f.read()), original_gif_file.host, consts.GIF,
                                    duration=original_gif_file.duration, frames=original_gif_file.frames)
             # reversed_gif = upload_gif_host.upload(f, consts.GIF, new_original_gif.context.nsfw)
     # Reverse it as a video
     else:
         with reverse_mp4(r, original_gif_file.audio, format=original_gif_file.type, output=upload_gif_host.video_type) as f:
-            reversed_gif = GifFile(BytesIO(f.read()), original_gif_file.host, upload_gif_host.video_type,
+            reversed_gif_file = GifFile(BytesIO(f.read()), original_gif_file.host, upload_gif_host.video_type,
                                    duration=original_gif_file.duration, audio=original_gif_file.audio)
             # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
 
-    reversed_gif, upload_gif_host = ghm.get_upload_host(reversed_gif)
-    reversed_gif = upload_gif_host.upload(reversed_gif.file, reversed_gif.type, new_original_gif.nsfw,
-                                          reversed_gif.audio)
+    reversed_gif_file, upload_gif_host = ghm.get_upload_host(reversed_gif_file)
+    uploaded_gif = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
+                                          reversed_gif_file.audio)
+    if not uploaded_gif:
+        reversed_gif_file, upload_gif_host = ghm.get_upload_host(reversed_gif_file, ignore=[upload_gif_host])
+        uploaded_gif = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
+                                              reversed_gif_file.audio)
 
-    if reversed_gif:
+    if uploaded_gif:
         # Add gif to database
         # if reversed_gif.log:
-        add_to_database(new_original_gif, reversed_gif)
+        add_to_database(new_original_gif, uploaded_gif)
         # Reply
-        print("Replying!", reversed_gif.url)
-        reply(context, reversed_gif)
+        print("Replying!", uploaded_gif.url)
+        reply(context, uploaded_gif)
         return SUCCESS
     else:
         return UPLOAD_FAILURE
