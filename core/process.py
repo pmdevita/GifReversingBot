@@ -102,7 +102,9 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
 
     original_gif_file, upload_gif_host = ghm.get_upload_host(new_original_gif.files)
 
-    reversed_gif = None
+    if not original_gif_file:
+        print("File too large {}s {}MB".format(new_original_gif.files[0].duration, new_original_gif.files[0].size))
+        return USER_FAILURE
 
     # if isinstance(gif_host.url, str):
     #     r = requests.get(gif_host.url)

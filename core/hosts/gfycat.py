@@ -15,6 +15,7 @@ ENCODE_TIMEOUT = 3200
 WAIT = 7
 ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
 
+
 class GfycatClient:
     instance = None
 
@@ -94,6 +95,9 @@ class GfycatClient:
             except json.decoder.JSONDecodeError as e:
                 print(r.text)
                 raise
+            # Gfycat once randomly invalidated my refresh token
+            # if response.get('code', '') == 'InvalidRefreshToken':
+            #   self.authenticate(True)
             self.timeout = int(time.time()) + response["expires_in"]
             self.access = response["access_token"]
             CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
@@ -263,7 +267,7 @@ class GfycatHost(GifHost):
     gif_type = GfycatGif
     audio = True
     video_type = consts.WEBM
-    vid_len_limit = 60  # This has been verified now
+    vid_len_limit = 61  # This has been double verified now lol
     gif_size_limit = 5000   # Gfycat doesn't have a real limit but I doubt anything higher than this will work
     gif_frame_limit = 2100
 

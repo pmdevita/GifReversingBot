@@ -58,12 +58,25 @@ def get_fps(filestream, ffprobe_path="ffprobe"):
     return fps
 
 
+def is_valid(file):
+    file.seek(0)
+    p = subprocess.Popen(
+        ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
+    if data:
+        return True
+    return False
+
+
 def get_frames(file):
     file.seek(0)
     p = subprocess.Popen(
         ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
+    if not data:
+        return None
     frames = int(data["streams"][0].get('nb_read_frames', 0))
     if not frames and isinstance(file, BytesIO):
         # Can happen sometimes if the file isn't on the drive

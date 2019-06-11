@@ -110,7 +110,7 @@ while True:
 
     except OperationalError:
         print("Unable to connect to database")
-        reddit.redditor(operator).message("Unable to connect to database")
+        reddit.redditor(operator).message("GRB Error", "Unable to connect to database")
         time.sleep(consts.sleep_time * 2)
 
     except ConnectionError:

@@ -6,6 +6,7 @@ from io import BytesIO
 from core.hosts import GifHost, Gif, GifFile
 from core.credentials import CredentialsLoader
 from core import constants as consts
+from core.file import is_valid
 
 catbox_hash = CredentialsLoader.get_credentials()['catbox']['hash']
 
@@ -27,7 +28,10 @@ class CatboxGif(Gif):
     def analyze(self):
         r = requests.get(self.url)
         file = BytesIO(r.content)
-        self.files.append(GifFile(file, self.host, consts.GIF))
+        if not is_valid(file):
+            return False
+        file = GifFile(file, self.host, consts.GIF)
+        self.files.append(file)
         vid_file = GifFile(file, self.host, self.id.split(".")[-1], audio=False)
         if self.id[-3:] == consts.GIF:
             self.files.append(vid_file)

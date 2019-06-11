@@ -15,7 +15,10 @@ class RedditVid(Gif):
         submission_id = REPatterns.reddit_submission.findall(r.url)
         url = None
         audio = False
-        if submission_id:
+        if not submission_id:
+            print("Deleted?")
+            return False
+        elif submission_id[0][2]:
             submission = self.host.ghm.reddit.submission(id=submission_id[0][2])
             if submission.is_video:
                 url = submission.media['reddit_video']['fallback_url']

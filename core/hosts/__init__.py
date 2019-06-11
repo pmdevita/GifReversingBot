@@ -1,7 +1,7 @@
 import requests
 from io import BytesIO
 from core import constants as consts
-from core.file import get_frames, get_duration, has_audio
+from core.file import get_frames, get_duration, has_audio, is_valid
 
 
 class GifFile:
@@ -11,6 +11,8 @@ class GifFile:
         self.type = gif_type
         self.size = None
         self.frames = frames
+        # Make unified metadata grabber function
+
         if audio is None:
             self.audio = False
         else:
