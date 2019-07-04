@@ -22,6 +22,8 @@ class StreamableClient:
 
     def download_video(self, id):
         r = requests.get('https://api.streamable.com/videos/{}'.format(id), headers=self.headers, auth=self.auth)
+        if r.status_code == 404:
+            return None
         json = r.json()
         return r.json()['files']['mp4']
 
@@ -47,6 +49,8 @@ streamable = StreamableClient()
 class StreamableGif(Gif):
     def analyze(self):
         info = streamable.download_video(self.id)
+        if not info:
+            return False
         file = BytesIO(requests.get("https:" + info['url']).content)
         self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, audio=False, duration=info['duration'],
                                   size=info['size']/1000000))

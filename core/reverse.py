@@ -140,7 +140,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
     # Create the params for the command
 
-    params = {"loglevel": "error", "audio": ""}
+    params = {"loglevel": "info", "audio": ""}
 
     if output == consts.MP4:
         params['codec'] = "-c:v libx264 -q:v 0"
@@ -148,22 +148,28 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
         params['codec'] = "-c:v libvpx -crf 8 -b:v 1500K"
 
     if audio:
-        params['audio'] = "-af areverse"
+        params['audio'] = "-af areverse "
 
     # Assemble command
 
-    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio} -y temp.{output}".format(output=output,
-                                                                                                          **params)
+    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio}-y temp.{output}".format(output=output, **params)
+
+    # command = "ffmpeg -loglevel {loglevel} -i pipe:0 -y temp.{output}".format(output=output, **params)
+
     print(command)
     command = command.split()
 
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    response = p.communicate(input=mp4.read())[0].decode()
+    response = p.communicate(input=mp4.read())
 
-    # print(response)
+    print(response[0].decode() if response[0] else None, response[1].decode() if response[1] else None)
+
+    response = response[0].decode()
 
     # Weird thing
-    if "partial file" in response:
+    if "partial file" in response or os.path.getsize('temp.' + output) <= 48:
+        "frame=    0 fps=0.0 q=0.0 size=       1kB time=00:00:00.00 bitrate=N/A"
+        "frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00"
         print("FFMPEG gave weird error, putting in file to reverse")
         in_file = "source." + format
         command[4] = in_file
@@ -173,6 +179,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         response = p.communicate()[0].decode()
+        print(response)
         os.remove(in_file)
 
     reversed = open("temp." + output, "rb")

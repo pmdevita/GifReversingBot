@@ -16,8 +16,8 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
                      password=credentials['reddit']['password'])
 ghm = GifHostManager(reddit)
 
-context = CommentContext(reddit, reddit.comment('eo4t506'), ghm)
+context = CommentContext(reddit, reddit.comment('eomsgqq'), ghm)
 print(vars(context))
-
-gif = ghm.host_names['Gfycat'].get_gif(text="https://gfycat.com/SkeletalShallowArmadillo")
-gif.analyze()
+#
+# gif = ghm.host_names['Gfycat'].get_gif(text="https://gfycat.com/SkeletalShallowArmadillo")
+# gif.analyze()

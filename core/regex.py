@@ -28,7 +28,7 @@ class REPatterns:
     reddit_vid = re.compile("https?://v.redd.it/(\w+)")
 
     # Streamable
-    streamable = re.compile("http(?:s)?://streamable.com/(.*)")
+    streamable = re.compile("https?://streamable.com/([a-z0-9]*)")
 
     # Mention in a comment reply
     reply_mention = re.compile("u/{}".format(consts.username.lower()), re.I)

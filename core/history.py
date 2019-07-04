@@ -27,18 +27,6 @@ def bind_db(db):
     db.generate_mapping(create_tables=True)
 
 
-# class OldGif(db.Entity):
-#     id = PrimaryKey(int, auto=True)
-#     origin_host = Required(int)
-#     origin_id = Required(str)
-#     reversed_host = Required(int)
-#     reversed_id = Required(str)
-#     time = Required(date)
-#     nsfw = Optional(bool)
-#     total_requests = Optional(int)
-#     last_requested_date = Optional(date)
-
-
 class GifHosts(db.Entity):
     name = PrimaryKey(str)
     origin_gifs = Set('Gif', reverse='origin_host')

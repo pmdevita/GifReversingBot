@@ -3,14 +3,18 @@ import subprocess
 import os
 from io import BytesIO
 
+# These functions need to be combined for optimization and cleanliness
+# They are doing a lot of the sames stuff already so it's turned into a mess
+
+
 def get_duration(filestream):
     filestream.seek(0)
     p = subprocess.Popen(
-        ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams"],
+        ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_format"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     output = p.communicate(input=filestream.read())[0].decode("utf-8")
     data = json.loads(output)
-    if not data['format'].get('duration', None):
+    if not data.get('format', {}).get('duration', None):
         # Can happen sometimes if the file isn't on the drive
         with open('tempfile', 'wb') as f:
             filestream.seek(0)
@@ -41,7 +45,12 @@ def get_fps(filestream, ffprobe_path="ffprobe"):
         [ffprobe_path, "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=filestream.read())[0].decode("utf-8"))
-    raw_fps = data["streams"][0]["avg_frame_rate"].split("/")
+    if data:
+        raw_fps = data["streams"][0]["avg_frame_rate"].split("/")
+        if not int(raw_fps[0]) or not int(raw_fps[1]):
+            raw_fps = data["streams"][0]["r_frame_rate"].split("/")
+    else:
+        raw_fps = [0, 0]
     if not int(raw_fps[0]) or not int(raw_fps[1]):
         # Can happen sometimes if the file isn't on the drive
         with open('tempfile', 'wb') as f:
@@ -52,6 +61,8 @@ def get_fps(filestream, ffprobe_path="ffprobe"):
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         data = json.loads(p.communicate()[0].decode("utf-8"))
         raw_fps = data["streams"][0]["avg_frame_rate"].split("/")
+        if not int(raw_fps[0]) or not int(raw_fps[1]):
+            raw_fps = data["streams"][0]["r_frame_rate"].split("/")
         os.remove('tempfile')
 
     fps = int(raw_fps[0]) / int(raw_fps[1])
@@ -65,7 +76,8 @@ def is_valid(file):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
     if data:
-        return True
+        if int(data['streams'][0]['nb_read_frames']) > 1:
+            return True
     return False
 
 
@@ -75,10 +87,8 @@ def get_frames(file):
         ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
-    if not data:
-        return None
-    frames = int(data["streams"][0].get('nb_read_frames', 0))
-    if not frames and isinstance(file, BytesIO):
+
+    if (not data or data.get('streams', [{}])[0].get('nb_read_frames', None) or data.get('streams', [{}])[0].get('nb_frames', None)) and isinstance(file, BytesIO):
         # Can happen sometimes if the file isn't on the drive
         with open('tempfile', 'wb') as f:
             file.seek(0)
@@ -87,7 +97,11 @@ def get_frames(file):
             ["ffprobe", "-i", "tempfile", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         data = json.loads(p.communicate()[0].decode("utf-8"))
-        frames = int(data["streams"][0].get('nb_read_frames', False))
+
+    frames = int(data["streams"][0].get('nb_read_frames', 0))
+    if not frames:
+        frames = int(data['streams'][0].get('nb_read_frames', 0))
+
     return frames
 
 

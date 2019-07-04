@@ -15,7 +15,7 @@ from core import constants as consts
 from core.gif import Gif as OldGif
 from core.credentials import CredentialsLoader
 from core.hosts import GifHost, Gif, GifFile
-from core.file import get_duration
+from core.file import get_duration, is_valid
 from core.regex import REPatterns
 
 
@@ -328,8 +328,11 @@ class ImgurGif(Gif):
         if self.duration > self.host.vid_len_limit:
             # Too long to be a mp4, add a gif option
             r = requests.get(self.pic.gifv[:-1])
-            file = BytesIO(r.content)
-            gif_file = GifFile(file, host=self.host, gif_type=consts.GIF, duration=self.duration)
+            gif = BytesIO(r.content)
+            if is_valid(gif):
+                gif_file = GifFile(gif, host=self.host, gif_type=consts.GIF, duration=self.duration)
+            else:
+                gif_file = GifFile(file, host=self.host, gif_type=consts.GIF, duration=self.duration)
             self.files.insert(0, gif_file)
 
         return True
