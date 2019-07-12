@@ -343,7 +343,7 @@ class ImgurHost(GifHost):
     regex = REPatterns.imgur
     url_template = "https://imgur.com/{}.gifv"
     gif_type = ImgurGif
-    vid_len_limit = 31
+    vid_len_limit = 46
     vid_size_limit = 0
     gif_size_limit = 201
 

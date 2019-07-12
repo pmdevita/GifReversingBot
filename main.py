@@ -111,7 +111,8 @@ while True:
     except OperationalError:
         print("Unable to connect to database")
         reddit.redditor(operator).message("GRB Error", "Unable to connect to database")
-        time.sleep(consts.sleep_time * 2)
+        failure_counter = min(failure_counter+1, 15)
+        time.sleep(consts.sleep_time * failure_counter)
 
     except ConnectionError:
         print('A connection was unable to be established')

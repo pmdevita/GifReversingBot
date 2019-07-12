@@ -22,7 +22,7 @@ class REPatterns:
     gfycat = re.compile("https?://(?:\w+?\.)?gfycat\.com/(?:(?:\S*?/)(?!/))*([a-zA-Z]*)")
 
     # Reddit Gif
-    reddit_gif = re.compile("http(?:s)?://i.redd.it/(.*?).gif")
+    reddit_gif = re.compile("http(?:s)?://i.redd.it/(.*?)\.gif")
 
     # Reddit Video
     reddit_vid = re.compile("https?://v.redd.it/(\w+)")
