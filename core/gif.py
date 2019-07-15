@@ -50,29 +50,28 @@ class GifHostManager:
                 return host.get_gif(text=text, **kwargs)
         return None
 
-    def get_upload_host(self, gif_files, ignore: Optional[List[GifHost]] = None) -> [Optional[GifFile], Optional[GifHost]]:
+    def get_upload_host(self, gif_file: GifFile, ignore: Optional[List[GifHost]] = None) -> [Optional[GifFile], Optional[GifHost]]:
         """Return a host that can suitably upload a file of these parameters"""
-        if isinstance(gif_files, GifFile):
-            gif_files = [gif_files]
+        # Create priority lists
+        if gif_file.type == consts.GIF:
+            priority = self.gif_priority[:]
+        else:
+            priority = self.vid_priority[:]
 
-        for gif_file in gif_files:
-            if gif_file.type == consts.GIF:
-                priority = self.gif_priority[:]
+        # We prioritize the original gif host
+        if gif_file.host in priority:
+            priority.remove(gif_file.host)
+            priority.insert(0, gif_file.host)
+        if ignore:
+            for gif_host in ignore:
+                priority.remove(gif_host)
+
+        for host in priority:
+            if self._within_host_params(host, gif_file):
+                print("Decided to upload to", host, gif_file)
+                return gif_file, host
             else:
-                priority = self.vid_priority[:]
-            if gif_file.host in priority:
-                priority.remove(gif_file.host)
-                priority.insert(0, gif_file.host)
-            if ignore:
-                for gif_host in ignore:
-                    priority.remove(gif_host)
-
-            for host in priority:
-                if self._within_host_params(host, gif_file):
-                    print("Decided to upload to", host, gif_file)
-                    return gif_file, host
-                else:
-                    print("Not within params of host", host, gif_file)
+                print("Not within params of host", host, gif_file)
         return None, None
 
     def _within_host_params(self, host: GifHost, gif_file: GifFile):

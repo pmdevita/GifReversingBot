@@ -1,5 +1,4 @@
 praw
-validators
 imgurpython
 requests
 requests_toolbelt

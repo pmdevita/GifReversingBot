@@ -42,7 +42,7 @@ gifs = {}
 for comment in reddit.user.me().comments.new(limit=None):
     counter += 1
     author = comment.parent().author
-    print(counter, comment.id, author, extract_gif_from_comment(ghm, comment.body), get_date(comment.created_utc))
+    print(counter, comment.id, author, ghm.extract_gif(comment.body), get_date(comment.created_utc))
     if author:
         users[author.name] += 1
     # pprint(vars(comment))

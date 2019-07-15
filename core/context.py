@@ -115,33 +115,6 @@ class CommentContext:
             return self.determine_target_url(reddit, reddit_object.parent(), layer+1, checking_manual)
 
 
-def old_find_url(text):
-    """Checks a string for valid urls"""
-    # Look through every word to see if one is a url
-    for i in text.split():
-        if parse.old_validate_url(i):
-            return i
-    # Check markdown links too
-    for i in REPatterns.link.findall(text):
-        if parse.old_validate_url(i):
-            return i
-    return None
-
-
-"""Deprecated???"""
-def extract_gif_from_comment(ghm: GifHostManager, text: str) -> Optional[GifHost]:
-    """Checks a string for valid urls"""
-    # Look through every word to see if one is a url
-    gif = ghm.extract_gif(text)
-    if gif:
-        return gif
-    # Check markdown links too
-    for i in REPatterns.link.findall(text):
-        if ghm.extract_gif(i):
-            return i
-    return None
-
-
 # Works but will mark a sfw gif first posted in an nsfw sub as nsfw ¯\_(ツ)_/¯
 def is_nsfw(comment):
     # Identify if submission is nsfw
