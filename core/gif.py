@@ -8,6 +8,14 @@ from core.hosts import GifHost, GifFile
 from core.hosts import Gif as NewGif
 from core.regex import REPatterns
 
+
+# Message constants
+# If a host is unable/unwilling to accept a specific gif
+CANNOT_UPLOAD = "CANNOT_UPLOAD"
+# If a host had a temporary failure/problem that inhibited the upload
+UPLOAD_FAILED = "UPLOAD_FAILED"
+
+
 class GifHostManager:
     hosts = []
     reddit = None
@@ -69,7 +77,7 @@ class GifHostManager:
         for host in priority:
             if self._within_host_params(host, gif_file):
                 print("Decided to upload to", host, gif_file)
-                return gif_file, host
+                return host
             else:
                 print("Not within params of host", host, gif_file)
         return None, None

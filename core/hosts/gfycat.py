@@ -137,7 +137,11 @@ class GfycatClient:
             print("getting gfyname...", params)
             r = requests.post(url, headers=headers, data=str(params))
             # print(r.text)
-            metadata = r.json()
+            try:
+                metadata = r.json()
+            except json.decoder.JSONDecodeError:
+                print(r.text)
+                raise
 
             if 'gfyname' not in metadata:
                 print(metadata)

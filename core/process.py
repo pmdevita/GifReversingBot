@@ -3,8 +3,7 @@ from io import BytesIO
 
 from core.context import CommentContext
 from core.reply import reply
-from core.gif import GifHostManager
-from core.gif_host import GifHost
+from core.gif import GifHostManager, CANNOT_UPLOAD, UPLOAD_FAILED
 from core.reverse import reverse_mp4, reverse_gif
 from core.history import check_database, add_to_database, delete_from_database
 from core import constants as consts
@@ -105,8 +104,10 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
     # This gif cannot be uploaded and it is not our fault
     cant_upload = False
 
+    # Try every option we have for reversing a gif
     for file in new_original_gif.files:
-        original_gif_file, upload_gif_host = ghm.get_upload_host(file)
+        original_gif_file = file
+        upload_gif_host = ghm.get_upload_host(file)
 
         if not original_gif_file:
             print("File too large {}s {}MB".format(new_original_gif.files[0].duration, new_original_gif.files[0].size))
@@ -134,24 +135,39 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
                 # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
 
         # Attempt a first upload
-        reversed_gif_file, upload_gif_host = ghm.get_upload_host(reversed_gif_file)
+        upload_gif_host = ghm.get_upload_host(reversed_gif_file)
         # If there was no suitable upload host, this format cannot be uploaded
         if not upload_gif_host:
             cant_upload = True
             continue
-        uploaded_gif = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
-                                              reversed_gif_file.audio)
-        # If we failed, try a different host (should be a for loop but got lazy)
-        if not uploaded_gif:
-            reversed_gif_file, upload_gif_host = ghm.get_upload_host(reversed_gif_file, ignore=[upload_gif_host])
-            if not upload_gif_host:
-                cant_upload = True
-                continue
-            uploaded_gif = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
-                                                  reversed_gif_file.audio)
 
+        # Using the provided host, perform the upload
+        for i in range(2):
+            result = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
+                                                  reversed_gif_file.audio)
+            # If the host simply cannot accept this file at all
+            if result == CANNOT_UPLOAD:
+                cant_upload = True
+                break
+            # If the host was unable to accept the gif at this time
+            elif result == UPLOAD_FAILED:
+                cant_upload = False
+                continue    # Try again?
+            # No error and not None, success!
+            elif result:
+                uploaded_gif = result
+                break
+
+        # If we have the uploaded gif, break out and continue
+        if uploaded_gif:
+            break
+
+    # If there was an error, return it
     if cant_upload:
         return USER_FAILURE
+    # It's not that it was an impossible request, there was something else
+    elif not uploaded_gif:
+        return UPLOAD_FAILURE
 
     if uploaded_gif:
         # Add gif to database

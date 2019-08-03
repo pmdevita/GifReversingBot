@@ -1,7 +1,6 @@
 from typing import Optional
 import praw.models
 from praw.const import API_PATH
-from core import parse
 from core import constants as consts
 from core.regex import REPatterns
 from core.gif import GifHostManager
@@ -91,14 +90,14 @@ class CommentContext:
                 return self.determine_target_url(reddit, reddit_object.parent(), layer+1, checking_manual)
             # If it's an AutoModerator summon, move our summon comment to the AutoMod's parent
             if reddit_object.author == "AutoModerator" and layer == 0:
-                self.comment = reddit_object.parent()
                 # Delete comment if a moderator
                 modded_subs = [i.name for i in reddit.user.moderator_subreddits()]
                 if reddit_object.subreddit.name in modded_subs:
-                    self.determine_target_url(reddit, reddit_object.parent(), layer + 1, checking_manual)
+                    self.comment = reddit_object.parent()
                     if reddit_object.stickied:
                         self.distinguish = True
                     reddit_object.mod.remove()
+                    reddit_object = self.comment
 
             # Search text for URL
             url = self.ghm.extract_gif(reddit_object.body, nsfw=self.nsfw)
