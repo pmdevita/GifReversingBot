@@ -5,8 +5,6 @@ import traceback
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
 from core import constants as consts
-from core.secret import secret_process
-from core.context import extract_gif_from_comment
 
 from pprint import pprint
 import json

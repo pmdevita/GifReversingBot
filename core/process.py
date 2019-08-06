@@ -109,7 +109,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         original_gif_file = file
         upload_gif_host = ghm.get_upload_host(file)
 
-        if not original_gif_file:
+        if not upload_gif_host:
             print("File too large {}s {}MB".format(new_original_gif.files[0].duration, new_original_gif.files[0].size))
             cant_upload = True
             continue

@@ -80,7 +80,7 @@ class GifHostManager:
                 return host
             else:
                 print("Not within params of host", host, gif_file)
-        return None, None
+        return None
 
     def _within_host_params(self, host: GifHost, gif_file: GifFile):
         """Determine whether a GifFile is within a GifHost's limitations"""
