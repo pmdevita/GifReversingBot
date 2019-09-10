@@ -43,8 +43,6 @@ class CommentContext:
         data['comment'] = self.comment.name
         return data
 
-
-
     def determine_target_url(self, reddit, reddit_object, layer=0, checking_manual=False):
         """Recursively find the gif URL the user wants"""
         # If the object is a post, check it's URL
@@ -100,6 +98,14 @@ class CommentContext:
                     reddit_object = self.comment
 
             # Search text for URL
+            # PRAW can come up with access errors, presumably because content gets deleted
+            try:
+                body = reddit_object.body
+            except AttributeError:
+                print("Comment has no text, was it deleted?")
+                # Ensure the search fails so we move to the next level
+                body = ""
+                return None
             url = self.ghm.extract_gif(reddit_object.body, nsfw=self.nsfw)
             # If found
             if url:

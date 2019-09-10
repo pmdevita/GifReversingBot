@@ -47,8 +47,8 @@ def get_fps(filestream, ffprobe_path="ffprobe"):
     data = json.loads(p.communicate(input=filestream.read())[0].decode("utf-8"))
     if data:
         raw_fps = data["streams"][0]["avg_frame_rate"].split("/")
-        if not int(raw_fps[0]) or not int(raw_fps[1]):
-            raw_fps = data["streams"][0]["r_frame_rate"].split("/")
+        # if not int(raw_fps[0]) or not int(raw_fps[1]):
+        #     raw_fps = data["streams"][0]["r_frame_rate"].split("/")
     else:
         raw_fps = [0, 0]
     if not int(raw_fps[0]) or not int(raw_fps[1]):
@@ -76,8 +76,7 @@ def is_valid(file):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
     if data:
-        if int(data['streams'][0]['nb_read_frames']) > 1:
-            return True
+        return data['streams'][0]['codec_type'] == "video"
     return False
 
 
@@ -87,8 +86,7 @@ def get_frames(file):
         ["ffprobe", "-i", "pipe:0", "-v", "quiet", "-print_format", "json", "-show_streams", "-count_frames"],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     data = json.loads(p.communicate(input=file.read())[0].decode("utf-8"))
-
-    if (not data or data.get('streams', [{}])[0].get('nb_read_frames', None) or data.get('streams', [{}])[0].get('nb_frames', None)) and isinstance(file, BytesIO):
+    if (not data or not (data.get('streams', [{}])[0].get('nb_read_frames', False) or data.get('streams', [{}])[0].get('nb_frames', False))) and isinstance(file, BytesIO):
         # Can happen sometimes if the file isn't on the drive
         with open('tempfile', 'wb') as f:
             file.seek(0)

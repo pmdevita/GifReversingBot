@@ -16,6 +16,11 @@ WAIT = 7
 ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
 
 
+class InvalidRefreshToken(Exception):
+    def __init__(self):
+        super(InvalidRefreshToken, self).__init__("The provided refresh token was invalid")
+
+
 class GfycatClient:
     instance = None
 
@@ -27,8 +32,10 @@ class GfycatClient:
         self.refresh = creds.get('refresh_token', None)
         self.timeout = int(creds.get('token_expiration', 0))
 
-        if self.access is None or self.refresh is None:
+        if self.refresh is None:
             self.authenticate(True)
+        if self.access is None:
+            self.get_token()
 
         # self.timeout, self.token = self._load_data()
 
@@ -81,23 +88,22 @@ class GfycatClient:
         CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
         CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
 
-
     def get_token(self):
         # If the token has expired, request a new one
         if self.timeout < int(time.time()):
-            # For some dumb reason it has to be a string
             data = {"grant_type": "refresh", "client_id": self.gfyid,
                     "client_secret": self.gfysecret, "refresh_token": self.refresh}
             url = "https://api.gfycat.com/v1/oauth/token"
+            # For some dumb reason, data has to be a string
             r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
             try:
                 response = r.json()
             except json.decoder.JSONDecodeError as e:
                 print(r.text)
                 raise
-            # Gfycat once randomly invalidated my refresh token
-            # if response.get('code', '') == 'InvalidRefreshToken':
-            #   self.authenticate(True)
+            # Sometimes Gfycat randomly invalidates refresh tokens >:(
+            if r.status_code == 401:
+                raise InvalidRefreshToken
             self.timeout = int(time.time()) + response["expires_in"]
             self.access = response["access_token"]
             CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
