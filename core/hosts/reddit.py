@@ -1,5 +1,6 @@
 import requests
 from io import BytesIO
+from prawcore.exceptions import ResponseException
 
 from core import constants as consts
 from core.hosts import GifHost, Gif, GifFile
@@ -20,8 +21,13 @@ class RedditVid(Gif):
             return False
         elif submission_id[0][2]:
             submission = self.host.ghm.reddit.submission(id=submission_id[0][2])
-            if submission.is_video:
-                url = submission.media['reddit_video']['fallback_url']
+            try:
+                if submission.is_video:
+                    url = submission.media['reddit_video']['fallback_url']
+            except ResponseException as e:
+                print("Video is inaccessible, likely deleted")
+                return False
+
         else:  # Maybe it was deleted?
             print("Deleted?")
             return False
