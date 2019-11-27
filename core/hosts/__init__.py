@@ -14,12 +14,9 @@ class GifFile:
         # Make unified metadata grabber function
 
         if audio is None:
-            self.audio = False
+            self.audio = has_audio(self.file)
         else:
-            if audio:
-                self.audio = True
-            else:
-                self.audio = has_audio(self.file)
+            self.audio = audio
         if gif_type == consts.GIF and not frames:
             self.frames = get_frames(self.file)
         if size:

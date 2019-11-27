@@ -64,8 +64,12 @@ def check_database(original_gif: NewGif_object):
     # Have we reversed this gif before?
     with db_session:
         host = GifHosts[original_gif.host.name]
+        gif_id = original_gif.id
+        if original_gif.host.name == "LinkGif":
+            if len(gif_id) > 255:
+                original_gif.id = original_gif.id[:255]
         query = select(g for g in Gif if g.origin_host == host and
-                       g.origin_id == original_gif.id)
+                       g.origin_id == gif_id)
         gif = query.first()
         # If we have, get it's host and id
         if gif:
@@ -89,6 +93,10 @@ def check_database(original_gif: NewGif_object):
 
 def add_to_database(original_gif, reversed_gif):
     with db_session:
+        # Extra checks for linkgif
+        if original_gif.host.name == "LinkGif":
+            if len(original_gif.id) > 255:
+                original_gif.id = original_gif.id[:255]
         new_gif = Gif(origin_host=GifHosts[original_gif.host.name], origin_id=original_gif.id,
                          reversed_host=GifHosts[reversed_gif.host.name], reversed_id=reversed_gif.id, time=date.today(),
                          nsfw=original_gif.nsfw, total_requests=1, last_requested_date=date.today())

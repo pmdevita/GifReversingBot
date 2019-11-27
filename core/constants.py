@@ -3,7 +3,7 @@ from core.credentials import CredentialsLoader
 user_agent = "GifReversingBot v{} by /u/pmdevita"
 spoof_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0"
 imgur_spoof_cookie = CredentialsLoader.get_credentials()['imgur']['imgur_cookie']
-version = "3.1.2"
+version = "3.1.3"
 sleep_time = 90
 username = CredentialsLoader.get_credentials()['reddit']['username']
 

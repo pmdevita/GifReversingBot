@@ -5,9 +5,11 @@ import platform
 from core import constants as consts
 from core.file import get_fps
 
+
 def zeros(number, num_zeros=6):
     string = str(number)
     return "".join(["0" for i in range(num_zeros - len(string))]) + string
+
 
 def reverse_gif(image, path=False, format=consts.GIF):
     """
@@ -54,7 +56,6 @@ def reverse_gif(image, path=False, format=consts.GIF):
     #     [ffmpeg, "-loglevel", "info", "-i", "-vf", "reverse", filename, "frame%06d.png"]
     # )
     response = p.communicate()
-
 
     if platform.system() == 'Windows':
         subprocess.Popen(
@@ -152,7 +153,8 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
     # Assemble command
 
-    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio}-y temp.{output}".format(output=output, **params)
+    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio}-y temp.{output}".format(output=output,
+                                                                                                         **params)
 
     # command = "ffmpeg -loglevel {loglevel} -i pipe:0 -y temp.{output}".format(output=output, **params)
 
@@ -165,11 +167,12 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     print(response[0].decode() if response[0] else None, response[1].decode() if response[1] else None)
 
     response = response[0].decode()
-
+    print(os.path.getsize('temp.' + output))
     # Weird thing
-    if "partial file" in response or os.path.getsize('temp.' + output) <= 48:
-        "frame=    0 fps=0.0 q=0.0 size=       1kB time=00:00:00.00 bitrate=N/A"
-        "frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00"
+    # A blank mp4 is 48 bytes, a blank webm is 632 bytes
+    if "partial file" in response or "Cannot allocate memory" in response or os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else 632):
+        """"frame=    0 fps=0.0 q=0.0 size=       1kB time=00:00:00.00 bitrate=N/A"""
+        """"frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00"""
         print("FFMPEG gave weird error, putting in file to reverse")
         in_file = "source." + format
         command[4] = in_file
@@ -179,9 +182,43 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         response = p.communicate()[0].decode()
+
         print(response)
+        # Did we fail again?
+        # if "partial file" in response or "Cannot allocate memory" in response or os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else 632):
+        #     # Just export frames and reconstruct
+        #     print("Exporting frames")
+        #     # Get FPS
+        #     # Gross hack, fix it later with integrated GifFile metadata
+        #     fps = get_fps(in_file)
+        #
+        #     os.chdir("temp")
+        #
+        #     # Export frames
+        #     p = subprocess.Popen(
+        #         [ffmpeg, "-loglevel", "quiet", "-i", "../" + in_file, "original%06d.png"]
+        #     )
+        #
+        #     response = p.communicate()
+        #
+        #     print("Renaming...")
+        #     # Reverse filenames
+        #     for i in os.walk("."):
+        #         files = i[2]
+        #         break
+        #
+        #     counter = len(files)
+        #     for i in range(1, len(files) + 1):
+        #         os.rename("original{}.png".format(zeros(i)), "frame{}.png".format(zeros(counter)))
+        #         counter -= 1
+        #
+        #     # Statistics
+        #     for i in os.walk("."):
+        #         files = i[2]
+        #         break
+
         os.remove(in_file)
 
-    reversed = open("temp." + output, "rb")
+    reversed_file = open("temp." + output, "rb")
 
-    return reversed
+    return reversed_file
