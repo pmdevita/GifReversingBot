@@ -23,7 +23,11 @@ class RedditVid(Gif):
             submission = self.host.ghm.reddit.submission(id=submission_id[0][2])
             try:
                 if submission.is_video:
-                    url = submission.media['reddit_video']['fallback_url']
+                    if submission.media:
+                        url = submission.media['reddit_video']['fallback_url']
+                    else:
+                        print("Submission is video but there is no media data")
+                        return False
             except ResponseException as e:
                 print("Video is inaccessible, likely deleted")
                 return False
