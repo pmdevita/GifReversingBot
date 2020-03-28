@@ -1,4 +1,3 @@
-import requests
 from io import BytesIO
 
 from core.context import CommentContext

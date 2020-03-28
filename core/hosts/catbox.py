@@ -64,3 +64,15 @@ class CatboxHost(GifHost):
         else:
             return None
 
+    @classmethod
+    def delete(cls, gif):
+        """Accepts a single Gif or a list of Gifs"""
+        if isinstance(gif, Gif):
+            gif = [gif]
+        print(" ".join([g.id for g in gif]))
+        r = requests.post("https://catbox.moe/user/api.php", data={'reqtype': 'deletefiles', 'userhash': catbox_hash,
+                                                                   'files': " ".join([g.id for g in gif])})
+        print(r.content)
+        return True
+
+

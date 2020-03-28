@@ -1,9 +1,10 @@
 # Manage a database of the last few months reverses and their links in order to save time
 from datetime import date
-from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit, Set
+from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit, Set, desc
 
 from core.gif import GifHostManager
 from core.hosts import Gif as NewGif_object
+from core.hosts import GifHost
 from core.credentials import CredentialsLoader
 
 db = Database()
@@ -118,3 +119,13 @@ def delete_from_database(original_gif):
             gif = query.first()
             if gif:
                 gif.delete()
+
+
+def list_by_oldest_access(reversed_host: GifHost, cutoff):
+    with db_session:
+        query = select(g for g in Gif if g.reversed_host == GifHosts[reversed_host.name]
+                       and g.last_requested_date < cutoff).order_by(Gif.last_requested_date)
+
+        print(query)
+        return query[:]
+

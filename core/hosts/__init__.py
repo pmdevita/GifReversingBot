@@ -73,6 +73,8 @@ class Gif:
         """Analyze how to (and if possible to) download gif"""
         raise NotImplementedError
 
+
+
     # def download(self) -> list:
     #     return self.files
 
@@ -103,6 +105,10 @@ class GifHost:
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
+        raise NotImplementedError
+
+    @classmethod
+    def delete(cls, gif):
         raise NotImplementedError
 
     @classmethod

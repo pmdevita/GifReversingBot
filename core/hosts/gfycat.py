@@ -278,7 +278,7 @@ class GfycatHost(GifHost):
     audio = True
     video_type = consts.WEBM
     vid_len_limit = 61  # This has been double verified now lol
-    gif_size_limit = 5000   # Gfycat doesn't have a real limit but I doubt anything higher than this will work
+    gif_size_limit = 1700   # Gfycat doesn't have a real limit but I doubt anything higher than this will work
     gif_frame_limit = 2100
 
     @classmethod
