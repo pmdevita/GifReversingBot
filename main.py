@@ -29,6 +29,7 @@ print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
 mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
+db_connected = True
 
 # Queue mode
 if args.queue:
@@ -82,6 +83,14 @@ while True:
                                                       "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
                 mark_read.append(message)
 
+            if not db_connected:
+                db_connected = True
+                reddit.redditor(operator).message("GRB Reconnected", "The bot was able to reconnect to the database.")
+            if credentials['general'].get('testing', "false").lower() == "true":
+                print("Press enter to continue or type something to quit")
+                if len(input()):
+                    print("You can now safely end the process")
+                    break
         reddit.inbox.mark_read(mark_read)
         mark_read.clear()
         if failure:
@@ -110,8 +119,12 @@ while True:
 
     except OperationalError:
         print("Unable to connect to database")
-        reddit.redditor(operator).message("GRB Error", "Unable to connect to database")
-        failure_counter = min(failure_counter+1, 15)
+        if db_connected:
+            reddit.redditor(operator).message("GRB Error", "The bot was unable to connect to the database. If "
+                                                          "connection is reestablished, a follow-up message will be "
+                                                          "sent.")
+            db_connected = False
+        failure_counter = min(failure_counter + 1, 15)
         time.sleep(consts.sleep_time * failure_counter)
 
     except ConnectionError:
