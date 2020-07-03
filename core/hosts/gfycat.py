@@ -276,6 +276,7 @@ class GfycatHost(GifHost):
     url_template = "https://gfycat.com/{}"
     gif_type = GfycatGif
     audio = True
+    NSFW = NO_NSFW
     video_type = consts.WEBM
     vid_len_limit = 61  # This has been double verified now lol
     gif_size_limit = 1700   # Gfycat doesn't have a real limit but I doubt anything higher than this will work

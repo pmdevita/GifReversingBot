@@ -3,6 +3,10 @@ from io import BytesIO
 from core import constants as consts
 from core.file import get_frames, get_duration, has_audio, is_valid
 
+NO_NSFW = 1
+NSFW_ALLOWED = 2
+ONLY_NSFW = 3
+
 
 class GifFile:
     def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0, audio=None):
@@ -92,6 +96,8 @@ class GifHost:
     can_vid = True
     # Can upload audio
     audio = False
+    # Allows NSFW
+    NSFW = NSFW_ALLOWED
     # Preferred video type
     video_type = consts.MP4
     # Video length limit in secs
