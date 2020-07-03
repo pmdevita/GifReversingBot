@@ -17,6 +17,11 @@ def reply(context: CommentContext, gif):
 
     comment = context.comment
 
+    reverse_flag = randrange(0, 3000) == 0 and not context.unnecessary_manual and not context.distinguish and not nsfw
+    # if comment.author.name == credentials['general']['operator']:
+    #     print("Hi", credentials['general']['operator'])
+    #     reverse_flag = True
+
     # Assemble prefixing messages
     message = url
     if context.unnecessary_manual:
@@ -27,7 +32,10 @@ def reply(context: CommentContext, gif):
         if nsfw:
             comment = comment.reply(consts.nsfw_reply_template.format(message))
         else:
-            comment = comment.reply(consts.reply_template.format(message))
+            if reverse_flag:
+                comment = comment.reply(consts.reply_reverse_template.format(message[::-1], message))
+            else:
+                comment = comment.reply(consts.reply_template.format(message))
         if context.distinguish:
             comment.mod.distinguish(sticky=True)
 
