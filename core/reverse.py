@@ -93,12 +93,12 @@ def reverse_gif(image, path=False, format=consts.GIF):
 
     if platform.system() == 'Windows':
         p = subprocess.Popen(
-            ['{}'.format(gifski), "-o", "../temp.gif", "--fps", str(round(fps)), "frame*.png"],
+            ['{}'.format(gifski), "-o", "../temp.gif", "--fps", str(max(round(fps), 1)), "frame*.png"],
             shell=True
         )
     else:
         p = subprocess.Popen(
-            ['{} -o ../temp.gif --fps {} frame*.png'.format(gifski, str(round(fps)))],
+            ['{} -o ../temp.gif --fps {} frame*.png'.format(gifski, str(max(round(fps), 1)))],
             shell=True
         )
 
