@@ -12,6 +12,10 @@ bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
              "Add a link to the gif or comment in your message%2C I'm not always sure which request is being " \
              "reported. Thanks for helping me out!)"
 
+bot_footer_reversed = "---\n\n[^(eussi na tropeR)]" \
+                 "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=" \
+             "Add a link to the gif or comment in your message%2C I'm not always sure which request is being " \
+             "reported. Thanks for helping me out!) ^(.tob a ma I)"
 
 nsfw_reply_template = "##NSFW\n\nHere is your gif!\n{}\n\n" + bot_footer
 
@@ -24,6 +28,8 @@ reply_ban_template = "Hi! Unfortunately, I am banned in that subreddit so I coul
 
 unnecessary_manual_message = "\n\nJust so you know, you don't have to manually give the gif URL if it is in " \
                              "a parent comment or the post. I would have known what you meant anyways :)\n\n"
+
+reply_reverse_template = "[{}]({})\n!fig ruoy si ereH\n\n" + bot_footer_reversed
 
 ignore_messages = ["Welcome to Moderating!", "re: Here is your gif!", "Your reddit premium subscription has expired."]
 
