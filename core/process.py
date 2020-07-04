@@ -12,7 +12,7 @@ from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 
 def process_comment(reddit, comment=None, queue=None, original_context=None):
     ghm = GifHostManager(reddit)
-    if not original_context:    # If we were not provided context, make our own
+    if not original_context:  # If we were not provided context, make our own
         # Check if comment is deleted
         if not comment.author:
             print("Comment doesn't exist????")
@@ -23,7 +23,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
 
         # Create the comment context object
         context = CommentContext(reddit, comment, ghm)
-        if not context.url:         # Did our search return nothing?
+        if not context.url:  # Did our search return nothing?
             print("Didn't find a URL")
             return USER_FAILURE
 
@@ -31,7 +31,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             reply(context, context.url)
             return SUCCESS
 
-    else:   # If we are the client, context is provided to us
+    else:  # If we are the client, context is provided to us
         context = original_context
 
     # Create object to grab gif from host
@@ -195,6 +195,7 @@ def process_mod_invite(reddit, message):
         subreddit.mod.accept_invite()
         print("Accepted moderatership at", subreddit_name)
         return subreddit_name
+
 
 def is_reupload_needed(reddit, gif: Gif):
     if gif.id:

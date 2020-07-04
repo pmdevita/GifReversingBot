@@ -7,6 +7,7 @@ from core.gif import GifHostManager
 from core.hosts import GifHost
 from pprint import pprint
 
+
 class CommentContext:
     def __init__(self, reddit, comment, ghm):
         """Determine the context of a summon by grabbing what comment/submission and url it is referring too"""
