@@ -16,7 +16,7 @@ from core.queue import Queue
 from pony.orm.dbapiprovider import OperationalError
 
 
-from core.gif import Gif
+# from core.gif import Gif
 import random
 import string
 

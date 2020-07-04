@@ -2,13 +2,13 @@ import praw.exceptions
 import prawcore.exceptions
 from core import constants as consts
 from core.context import CommentContext
-from core.gif import Gif as GifObject
+# from core.gif import Gif as GifObject
 from core.hosts import Gif as NewGifObject
 
 
 def reply(context: CommentContext, gif):
     # If we have a gif, use it's data. Else, use info from context
-    if isinstance(gif, GifObject) or isinstance(gif, NewGifObject):
+    if isinstance(gif, NewGifObject):
         url = gif.url
         nsfw = gif.nsfw or context.nsfw
     else:

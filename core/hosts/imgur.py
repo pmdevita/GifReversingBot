@@ -12,7 +12,7 @@ from requests_toolbelt import MultipartEncoder
 from imgurpython.imgur.models.gallery_image import GalleryImage
 
 from core import constants as consts
-from core.gif import Gif as OldGif
+# from core.gif import Gif as OldGif
 from core.credentials import CredentialsLoader
 from core.hosts import GifHost, Gif, GifFile
 from core.file import get_duration, is_valid
@@ -271,7 +271,7 @@ def imgurupload(file, type, nsfw=False):
                     return None
 
             # image_url = "https://imgur.com/{}.gifv".format(image_id)
-            gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
+            # gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
         print("Done!")
         return image_id
 
