@@ -8,7 +8,7 @@ from pprint import pprint
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile
+from core.hosts import GifHost, Gif, GifFile, NO_NSFW
 from core.regex import REPatterns
 
 ENCODE_TIMEOUT = 3200
