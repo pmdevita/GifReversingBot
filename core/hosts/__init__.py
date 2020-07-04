@@ -89,7 +89,6 @@ class Gif:
         raise NotImplementedError
 
 
-
     # def download(self) -> list:
     #     return self.files
 
@@ -149,10 +148,15 @@ def get_response_size(url, max=None):
     if max:
         max_bytes = max * 1000000
     size = 0
-    with requests.get(url, stream=True) as r:
-        for chunk in r.iter_content(8196):
-            size += len(chunk)
-            if max:
-                if size > max_bytes:
-                    return False
-    return size / 1000000
+    headers = {"User-Agent": consts.spoof_user_agent}
+    try:
+        with requests.get(url, stream=True, headers=headers) as r:
+            for chunk in r.iter_content(8196):
+                size += len(chunk)
+                if max:
+                    if size > max_bytes:
+                        return False
+        return size / 1000000
+    except Exception as e:
+        print(e, dir(e))
+        raise e
