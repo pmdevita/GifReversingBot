@@ -49,6 +49,7 @@ class CatboxHost(GifHost):
     url_template = "https://files.catbox.moe/{}"
     vid_size_limit = 200
     gif_size_limit = 20
+    vid_len_limit = 540
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
@@ -60,6 +61,8 @@ class CatboxHost(GifHost):
         r = requests.post("https://catbox.moe/user/api.php", data=m, headers={'Content-Type': m.content_type,
                                                                               'User-Agent': consts.user_agent})
         if r.status_code == 200:
+            if r.text == "Down for maintainence...":
+                return None
             return CatboxGif(cls, None, url=r.text)
         else:
             return None
