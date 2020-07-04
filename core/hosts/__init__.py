@@ -142,6 +142,12 @@ class GifHost:
     def match(cls, text):
         return len(cls.regex.findall(text)) != 0
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 def get_response_size(url, max=None):
     """Returns size in MB"""

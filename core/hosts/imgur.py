@@ -359,6 +359,9 @@ class ImgurHost(GifHost):
         if id:
             return ImgurGif(cls, id, nsfw=nsfw)
 
+    def __repr__(self):
+        return "asdfasdfas"
+
 
 if __name__ == '__main__':
     headers = {"User-Agent": consts.spoof_user_agent}
