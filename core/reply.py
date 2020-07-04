@@ -54,3 +54,6 @@ def reply(context: CommentContext, gif):
         # Probably banned, message the gif to them
         comment.author.message(consts.reply_ban_subject, consts.reply_ban_template.format(url))
         print("Successfully reversed and messaged!")
+    except praw.exceptions.APIException as e:
+        print(e, dir(e))
+        raise e
