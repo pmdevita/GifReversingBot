@@ -23,9 +23,17 @@ class InvalidRefreshToken(Exception):
 
 class GfycatClient:
     instance = None
+    CREDENTIALS_BLOCK = 'gfycat'
+    SERVICE_NAME = "Gfycat"
+    TOKEN_URL = "https://api.gfycat.com/v1/oauth/token"
+    GFYCAT_INFO = "https://api.gfycat.com/v1/gfycats/{}"
+    GFYCAT_CREATE = "https://api.gfycat.com/v1/gfycats"
+    GFYCAT_UPLOAD = "https://filedrop.gfycat.com"
+    GFYCAT_STATUS = "https://api.gfycat.com/v1/gfycats/fetch/status/{}"
+
 
     def __init__(self):
-        creds = CredentialsLoader.get_credentials()['gfycat']
+        creds = CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]
         self.gfyid = creds["gfycat_id"]
         self.gfysecret = creds["gfycat_secret"]
         self.access = creds.get('access_token', None)
@@ -64,7 +72,7 @@ class GfycatClient:
     def authenticate(self, password=False):
         # For some dumb reason it has to be a string
         if password:
-            print("Log into Gfycat")
+            print("Log into {}".format(self.SERVICE_NAME))
             username = input("Username: ")
             password = input("Password: ")
 
@@ -74,7 +82,7 @@ class GfycatClient:
             data = {"grant_type": "client_credentials", "client_id": self.gfyid,
                     "client_secret": self.gfysecret}
 
-        url = "https://api.gfycat.com/v1/oauth/token"
+        url = self.TOKEN_URL
         r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
         try:
             response = r.json()
@@ -84,16 +92,16 @@ class GfycatClient:
         self.timeout = int(time.time()) + response["expires_in"]
         self.access = response["access_token"]
         self.refresh = response["refresh_token"]
-        CredentialsLoader.set_credential('gfycat', 'refresh_token', self.refresh)
-        CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
-        CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
 
     def get_token(self):
         # If the token has expired, request a new one
         if self.timeout < int(time.time()):
             data = {"grant_type": "refresh", "client_id": self.gfyid,
                     "client_secret": self.gfysecret, "refresh_token": self.refresh}
-            url = "https://api.gfycat.com/v1/oauth/token"
+            url = self.TOKEN_URL
             # For some dumb reason, data has to be a string
             r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
             try:
@@ -106,13 +114,13 @@ class GfycatClient:
                 raise InvalidRefreshToken
             self.timeout = int(time.time()) + response["expires_in"]
             self.access = response["access_token"]
-            CredentialsLoader.set_credential('gfycat', 'access_token', self.access)
-            CredentialsLoader.set_credential('gfycat', 'token_expiration', str(self.timeout))
+            CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
+            CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
         return self.access
 
     def get_gfycat(self, id):
         headers = {"Authorization": "Bearer {}".format(self.get_token())}
-        url = "https://api.gfycat.com/v1/gfycats/{}".format(id)
+        url = self.GFYCAT_INFO.format(id)
         r = requests.get(url, headers=headers)
         if r.status_code != 200:
             print("Gfycat - get problem status code {}".format(str(r.status_code)))
@@ -124,7 +132,7 @@ class GfycatClient:
         tries = 3
         while tries:
             # get gfyname
-            url = "https://api.gfycat.com/v1/gfycats"
+            url = self.GFYCAT_CREATE
             headers = {"Authorization": "Bearer " + self.get_token(), 'User-Agent': consts.user_agent,
                        'Content-Type': 'application/json'}
             params = {}
@@ -164,7 +172,7 @@ class GfycatClient:
 
             # upload
             if media_type != consts.LINK:
-                url = "https://filedrop.gfycat.com"
+                url = self.GFYCAT_UPLOAD
                 if media_type == consts.MP4 or media_type == consts.WEBM:
                     files = {"key": metadata["gfyname"], "file": (metadata["gfyname"], filestream, "video/" + media_type)}
                 elif media_type == consts.GIF:
@@ -174,7 +182,7 @@ class GfycatClient:
                 r = requests.post(url, data=m, headers={'Content-Type': m.content_type, 'User-Agent': consts.user_agent})
 
             # check status for gif's id
-            url = "https://api.gfycat.com/v1/gfycats/fetch/status/" + metadata["gfyname"]
+            url = self.GFYCAT_STATUS.format(metadata["gfyname"])
             headers = {'User-Agent': consts.user_agent}
             print("waiting for encode...", end=" ")
             r = requests.get(url, headers=headers)
@@ -187,10 +195,15 @@ class GfycatClient:
             percentage = 0
             notfoundo = 5
             for i in range(ENCODE_LOOPS):
+                print(ticket)
                 if ticket["task"] == "encoding":
                     time.sleep(WAIT)
                     r = requests.get(url, headers=headers)
-                    ticket = r.json()
+                    try:
+                        ticket = r.json()
+                    except json.decoder.JSONDecodeError as e:
+                        print(r.text)
+                        raise e
                     # print(ticket)
                     if float(ticket.get('progress', 0)) > percentage:
                         percentage = float(ticket['progress'])
@@ -243,32 +256,35 @@ class GfycatClient:
             return None
 
 
-gfycat = GfycatClient.get()
-
-
 class GfycatGif(Gif):
     def analyze(self) -> bool:
-        self.pic = gfycat.get_gfycat(self.id)
+        self.pic = self.host.API.get_gfycat(self.id)
         if not self.pic:
             return False
-        self.id = self.pic['gfyName']
+        try:
+            self.id = self.pic['gfyName']
+        except KeyError:
+            print("GfyName missing, is it deleted?")
+            return False
+
         self.url = self.pic["webmUrl"]
         self.type = consts.WEBM
         if self.url == "":  # If we received no URL, the GIF was brought down or otherwise missing
-            print("Gfycat gif missing")
+            print("{} gif missing".format(self.host.name))
             return False
         self.duration = self.pic['numFrames'] / self.pic['frameRate']
         audio = self.pic['hasAudio']
         frames = self.pic['numFrames']
         self.file = BytesIO(requests.get(self.url).content)
         if int(self.pic['nsfw']):
-            print("Gfycat says it's nsfw")
+            print("{} says it's nsfw".format(self.host.name))
             # pprint(self.pic)
         # self.nsfw = self.nsfw or int(self.pic['nsfw']) # Gfycat's NSFW flag is essentially useless
         self.size = self.pic['webmSize'] / 1000000
         self.files.append(GifFile(self.file, self.host, self.type, self.size, self.duration, audio=audio))
         self.files.append(GifFile(self.file, self.host, consts.GIF, self.size, self.duration, frames, audio=audio))
         return True
+
 
 class GfycatHost(GifHost):
     name = "Gfycat"
@@ -281,10 +297,11 @@ class GfycatHost(GifHost):
     vid_len_limit = 61  # This has been double verified now lol
     gif_size_limit = 1700   # Gfycat doesn't have a real limit but I doubt anything higher than this will work
     gif_frame_limit = 2100
+    API = GfycatClient.get()
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
-        id = gfycat.upload(file, gif_type, nsfw=nsfw, audio=audio)
+        id = cls.API.upload(file, gif_type, nsfw=nsfw, audio=audio)
         if id:
-            return GfycatGif(cls, id, nsfw=nsfw)
+            return cls.gif_type(cls, id, nsfw=nsfw)
 
