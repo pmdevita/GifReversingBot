@@ -104,46 +104,53 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
     cant_upload = False
 
     # Try every option we have for reversing a gif
-    for file in new_original_gif.files:
-        original_gif_file = file
-        upload_gif_host = ghm.get_upload_host(file)
+    options = ghm.get_upload_host(new_original_gif)
 
-        if not upload_gif_host:
-            print("File too large {}s {}MB".format(new_original_gif.files[0].duration, new_original_gif.files[0].size))
-            cant_upload = True
-            continue
-        else:
+    if not options:
+        print("File too large {}s {}MB".format(new_original_gif.files[0].duration, new_original_gif.files[0].size))
+        cant_upload = True
+    else:
+        cant_upload = False
+
+    for option in options:
+        upload_gif_host = option['hosts'][0]
+        original_gif_file = option['file']
+
+        # Temporarily halt any uploads to Redgifs
+        if upload_gif_host == ghm['Redgifs']:
+            print("Blocked Redgifs upload")
             cant_upload = False
+            break
 
         r = original_gif_file.file
 
         # Reverse it as a GIF
         if original_gif_file.type == consts.GIF:
             # With reversed gif
-            with reverse_gif(r, format=original_gif_file.type) as f:
-                # Give to gif_host's uploader
-                reversed_gif_file = GifFile(BytesIO(f.read()), original_gif_file.host, consts.GIF,
-                                            duration=original_gif_file.duration, frames=original_gif_file.frames)
-                # reversed_gif = upload_gif_host.upload(f, consts.GIF, new_original_gif.context.nsfw)
+            f = reverse_gif(r, format=original_gif_file.type)
+            # Give to gif_host's uploader
+            reversed_gif_file = GifFile(f, original_gif_file.host, consts.GIF,
+                                        duration=original_gif_file.duration, frames=original_gif_file.frames)
+            # reversed_gif = upload_gif_host.upload(f, consts.GIF, new_original_gif.context.nsfw)
         # Reverse it as a video
         else:
-            with reverse_mp4(r, original_gif_file.audio, format=original_gif_file.type,
-                             output=upload_gif_host.video_type) as f:
-                reversed_gif_file = GifFile(BytesIO(f.read()), original_gif_file.host, upload_gif_host.video_type,
-                                            duration=original_gif_file.duration, audio=original_gif_file.audio)
-                # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
+            f = reverse_mp4(r, original_gif_file.audio, format=original_gif_file.type,
+                            output=upload_gif_host.video_type)
+            reversed_gif_file = GifFile(f, original_gif_file.host, upload_gif_host.video_type,
+                                        duration=original_gif_file.duration, audio=original_gif_file.audio)
+            # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
 
         # Attempt a first upload
-        upload_gif_host = ghm.get_upload_host(reversed_gif_file)
+        options = ghm.get_upload_host(new_original_gif, file=reversed_gif_file)
         # If there was no suitable upload host, this format cannot be uploaded
-        if not upload_gif_host:
+        if not options:
             cant_upload = True
             continue
 
         # Using the provided host, perform the upload
         for i in range(2):
-            result = upload_gif_host.upload(reversed_gif_file.file, reversed_gif_file.type, new_original_gif.nsfw,
-                                                  reversed_gif_file.audio)
+            result = options[0]['hosts'][0].upload(reversed_gif_file.file, reversed_gif_file.type,
+                                                   new_original_gif.nsfw, reversed_gif_file.audio)
             # If the host simply cannot accept this file at all
             if result == CANNOT_UPLOAD:
                 cant_upload = True
@@ -151,7 +158,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             # If the host was unable to accept the gif at this time
             elif result == UPLOAD_FAILED:
                 cant_upload = False
-                continue    # Try again?
+                continue  # Try again?
             # No error and not None, success!
             elif result:
                 uploaded_gif = result

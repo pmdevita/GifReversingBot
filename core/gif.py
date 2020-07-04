@@ -4,7 +4,7 @@ from operator import itemgetter
 import os
 import importlib
 from core import constants as consts
-from core.hosts import GifHost, GifFile
+from core.hosts import GifHost, GifFile, ONLY_NSFW, NSFW_ALLOWED, NO_NSFW
 from core.hosts import Gif as NewGif
 from core.regex import REPatterns
 
@@ -58,34 +58,48 @@ class GifHostManager:
                 return host.get_gif(text=text, **kwargs)
         return None
 
-    def get_upload_host(self, gif_file: GifFile, ignore: Optional[List[GifHost]] = None) -> [Optional[GifFile], Optional[GifHost]]:
+    def get_upload_host(self, gif: NewGif, file: GifFile = None, ignore: Optional[List[GifHost]] = None) -> [Optional[GifFile], Optional[GifHost]]:
         """Return a host that can suitably upload a file of these parameters"""
-        # Create priority lists
-        if gif_file.type == consts.GIF:
-            priority = self.gif_priority[:]
+        acceptable_files = []
+        if file:
+            file_list = [file]
         else:
-            priority = self.vid_priority[:]
-
-        # We prioritize the original gif host
-        if gif_file.host in priority:
-            priority.remove(gif_file.host)
-            priority.insert(0, gif_file.host)
-        if ignore:
-            for gif_host in ignore:
-                priority.remove(gif_host)
-
-        for host in priority:
-            if self._within_host_params(host, gif_file):
-                print("Decided to upload to", host, gif_file)
-                return host
+            file_list = gif.files
+        for gif_file in file_list:
+            file_hosts = []
+            # Create priority lists
+            if gif_file.type == consts.GIF:
+                priority = self.gif_priority[:]
             else:
-                print("Not within params of host", host, gif_file)
-        return None
+                priority = self.vid_priority[:]
 
-    def _within_host_params(self, host: GifHost, gif_file: GifFile):
+            # We prioritize the original gif host
+            if gif_file.host in priority:
+                priority.remove(gif_file.host)
+                priority.insert(0, gif_file.host)
+            if ignore:
+                for gif_host in ignore:
+                    priority.remove(gif_host)
+
+            for host in priority:
+                if self._within_host_params(host, gif, gif_file):
+                    file_hosts.append(host)
+                    print("Decided to upload to", str(host), gif_file)
+                else:
+                    print("Not within params of host", host, gif_file)
+            if file_hosts:
+                acceptable_files.append({"file": gif_file, "hosts": file_hosts})
+        return acceptable_files if acceptable_files else None
+
+    def _within_host_params(self, host: GifHost, gif: NewGif, gif_file: GifFile):
         """Determine whether a GifFile is within a GifHost's limitations"""
         # Several types of videos but only one type of gif
         # Can gif check may be redundant due to priority calculations
+        if (host.NSFW == NO_NSFW) and gif.nsfw:
+            return False
+        if (host.NSFW == ONLY_NSFW) and not gif.nsfw:
+            return False
+
         if gif_file.type == consts.GIF:
             if host.can_gif and (host.gif_size_limit >= gif_file.size or host.gif_size_limit == 0) and \
                (host.gif_frame_limit >= gif_file.frames or host.gif_frame_limit == 0):
