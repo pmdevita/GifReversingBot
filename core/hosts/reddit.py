@@ -36,11 +36,10 @@ class RedditVid(Gif):
             print("Deleted?")
             return False
 
-
         r = requests.get(url)
         file = BytesIO(r.content)
 
-        r = requests.get("https://v.redd.it/{}/audio".format(self.id), headers=headers)
+        r = requests.get("https://v.redd.it/{}/DASH_audio.mp4".format(self.id), headers=headers)
         if r.status_code == 200:
             file = concat(file, BytesIO(r.content))
             audio = True
