@@ -95,7 +95,7 @@ while True:
         mark_read.clear()
         if failure:
             print("An upload failed, extending wait")
-            failure_counter += 1
+            # failure_counter += 1
         else:
             failure_counter = 1
 
