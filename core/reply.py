@@ -4,6 +4,10 @@ from core import constants as consts
 from core.context import CommentContext
 # from core.gif import Gif as GifObject
 from core.hosts import Gif as NewGifObject
+from random import randrange
+# from core.credentials import CredentialsLoader
+#
+# credentials = CredentialsLoader().get_credentials()
 
 
 def reply(context: CommentContext, gif):
