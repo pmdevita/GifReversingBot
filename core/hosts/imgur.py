@@ -56,7 +56,6 @@ class ImgurClient(pImgurClient):
         return cls.instance
 
 
-
 class AuthWrapper(pAuthWrapper):
     def refresh(self):
         data = {
@@ -95,7 +94,8 @@ def imgurupload(file, type, nsfw=False):
         params = {"total_uploads": "1", "create_album": "true"}
         headers = {"Accept": "*/*", "Origin": "https://imgur.com", "X-Requested-With": "XMLHttpRequest",
                    "User-Agent": consts.spoof_user_agent,
-                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", "Referer": "https://imgur.com/upload",
+                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                   "Referer": "https://imgur.com/upload",
                    "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9", "Host": "imgur.com",
                    "cookie": consts.imgur_spoof_cookie}
         print("getting imgur album id... ", end="")
@@ -115,11 +115,11 @@ def imgurupload(file, type, nsfw=False):
                     return Done
             print("I have no idea what's going on")
             print(r.text)
+            print("Press Enter to continue")
             input()
 
         print(setup['data']['new_album_id'])
         # input()
-
 
         # Now upload the file to our album id
         url = "https://imgur.com/upload"
@@ -156,7 +156,7 @@ def imgurupload(file, type, nsfw=False):
                 else:
                     print("Imgur not responding, upload failed!")
                     return Done
-        
+
         if not upload['data'].get('ticket', None):
             print("wat")
             pprint(upload)
@@ -207,7 +207,7 @@ def imgurupload(file, type, nsfw=False):
                        "User-Agent": consts.spoof_user_agent,
                        "Referer": "https://imgur.com/upload",
                        "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9",
-                        "cookie": consts.imgur_spoof_cookie}
+                       "cookie": consts.imgur_spoof_cookie}
             params = {"tickets[]": upload["data"]["ticket"]}
             print("waiting for processing...", end="")
             r = requests.get(url, params, headers=headers)
@@ -329,7 +329,7 @@ class ImgurGif(Gif):
         self.duration = get_duration(file)
 
         self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration,
-                                  size=self.pic.mp4_size/1000000))
+                                  size=self.pic.mp4_size / 1000000))
 
         # If the file type is a gif, add it as an option and prioritize it
         if self.pic.type == 'image/gif':
@@ -365,4 +365,4 @@ if __name__ == '__main__':
     # Follow redirect to post URL
     r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
     if r.url == "https://i.imgur.com/removed.png":
-        pass    # failure
+        pass  # failure
