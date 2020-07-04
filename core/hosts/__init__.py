@@ -1,3 +1,4 @@
+import os
 import requests
 from io import BytesIO
 from core import constants as consts
@@ -27,12 +28,22 @@ class GifFile:
             self.size = size
         else:
             if isinstance(file, BytesIO):
-                self.size = file.getbuffer().nbytes / 1000000
+                self.size = file.getbuffer().nbytes / 1000000  # Convert to MB
+            else:
+                self.size = os.fstat(file.fileno()).st_size / 1000000  # Convert to MB
+
         if duration:
             self.duration = duration
         else:
             self.duration = get_duration(self.file)
         self.host = host
+        self.file.seek(0)
+
+    def __del__(self):
+        self.file.close()
+
+    def __repr__(self):
+        return "{}/{}".format(str(self.host), self.type)
 
 
 class Gif:
