@@ -1,5 +1,5 @@
 from io import BytesIO
-
+import praw.exceptions
 from core.context import CommentContext
 from core.reply import reply
 from core.gif import GifHostManager, CANNOT_UPLOAD, UPLOAD_FAILED
@@ -14,9 +14,13 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
     ghm = GifHostManager(reddit)
     if not original_context:  # If we were not provided context, make our own
         # Check if comment is deleted
-        if not comment.author:
-            print("Comment doesn't exist????")
-            print(vars(comment))
+        try:
+            if not comment.author:
+                print("Comment doesn't exist????")
+                print(vars(comment))
+                return USER_FAILURE
+        except praw.exceptions.PRAWException as e:
+            print(e)
             return USER_FAILURE
 
         print("New request by " + comment.author.name)
