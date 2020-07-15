@@ -1,279 +1,185 @@
+import urllib
 import time
 import requests
-import json.decoder
-from io import BytesIO
+import json
 from pprint import pprint
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-from imgurpython import ImgurClient as pImgurClient
-from imgurpython.client import API_URL
-from imgurpython.client import AuthWrapper as pAuthWrapper
-from imgurpython.helpers.error import ImgurClientError
-from requests_toolbelt import MultipartEncoder
-from imgurpython.imgur.models.gallery_image import GalleryImage
-
-from core import constants as consts
-# from core.gif import Gif as OldGif
 from core.credentials import CredentialsLoader
-from core.hosts import GifHost, Gif, GifFile
-from core.file import get_duration, is_valid
+from core import constants as consts
+from core.hosts import GifHost, Gif, GifFile, NO_NSFW
 from core.regex import REPatterns
 
 
-class ImgurClient(pImgurClient):
+class InvalidRefreshToken(Exception):
+    def __init__(self):
+        super(InvalidRefreshToken, self).__init__("The provided refresh token was invalid")
+
+
+class ImgurFailedRequest(Exception):
+    def __init__(self):
+        super(ImgurFailedRequest, self).__init__("Something went wrong with the request")
+
+
+class ImgurClient:
     instance = None
+    CREDENTIALS_BLOCK = 'imgur'
+    SERVICE_NAME = "Imgur"
+    OAUTH_BASE = "https://api.imgur.com/oauth2/"
+    AUTHORIZATION_URL = "authorize"
+    TOKEN_URL = "token"
+    API_BASE = "https://api.imgur.com/3/"
+    GALLERY_ALBUM = "gallery/album/"
+    IMAGE = "image/"
+    ALBUM = "album/"
+    IMAGE_UPLOAD = "upload"
 
-    def __init__(self, id, secret):
-        self.client_id = id
-        self.client_secret = secret
-        self.auth = None
-        self.mashape_key = None
+    def __init__(self):
+        creds = CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]
+        self.client_id = creds["imgur_id"]
+        self.client_secret = creds["imgur_secret"]
+        self.access = creds.get('access_token', None)
+        self.refresh = creds.get('refresh_token', None)
+        self.timeout = int(creds.get('token_expiration', 0))
 
-        access = CredentialsLoader.get_credentials()['imgur'].get('access_token', None)
-        refresh = CredentialsLoader.get_credentials()['imgur'].get('refresh_token', None)
-        # imgur_credentials = self.loadimgur()
-        if access and refresh:
-            self.auth = AuthWrapper(access, refresh, id, secret)
-        else:
-            # Oauth setup
-            print("Imgur Auth URL: ", self.get_auth_url('pin'))
-            pin = input("Paste the pin here:")
-            credentials = self.authorize(pin, 'pin')
-            CredentialsLoader.set_credential('imgur', 'access_token', credentials['access_token'])
-            CredentialsLoader.set_credential('imgur', 'refresh_token', credentials['refresh_token'])
-
-            # self.saveimgur((credentials['access_token'], credentials['refresh_token']))
-
-            self.set_user_auth(credentials['access_token'], credentials['refresh_token'])
-            self.auth = AuthWrapper(credentials['access_token'], credentials['refresh_token'], id, secret)
-
-        # self.credits = self.get_credits()
+        if self.refresh is None:
+            self.authenticate()
+        if self.access is None:
+            self.get_token()
 
     @classmethod
     def get(cls):
         if not cls.instance:
-            credentials = CredentialsLoader.get_credentials()
-            cls.instance = cls(credentials['imgur']['imgur_id'], credentials['imgur']['imgur_secret'])
+            cls.instance = cls()
         return cls.instance
 
+    def authenticate(self):
+        print("Log into {}".format(self.SERVICE_NAME))
+        print("Authorize here: " +
+              self.OAUTH_BASE + self.AUTHORIZATION_URL + "?" + urllib.parse.urlencode({
+                  "client_id": self.client_id, "response_type": "token", "state": "GifHostLibrary"
+              }))
+        result = input().strip()
+        parts = urllib.parse.urlparse(result)
+        params = urllib.parse.parse_qs(parts.fragment)
+        print(parts, params)
 
-class AuthWrapper(pAuthWrapper):
-    def refresh(self):
-        data = {
-            'refresh_token': self.refresh_token,
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'grant_type': 'refresh_token'
-        }
+        self.timeout = int(time.time()) + int(params["expires_in"][0])  # [0] quirk of parse_qs
+        self.access = params["access_token"][0]
+        self.refresh = params["refresh_token"][0]
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
+        CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
 
-        url = API_URL + 'oauth2/token'
-
-        response = requests.post(url, data=data)
-
-        if response.status_code != 200:
-            raise ImgurClientError('Error refreshing access token!', response.status_code)
-
-        response_data = response.json()
-        self.current_access_token = response_data['access_token']
-
-        CredentialsLoader.set_credential('imgur', 'access_token', response_data['access_token'])
+        # self.timeout = 0
+        # self.get_token()
 
 
-def imgurupload(file, type, nsfw=False):
-    """
-    :param file: filestream to upload
-    :param name: string name of filestream
-    :param mimetype: string for mimetype of filestream
-    :param delete: boolean of whether to print delete links
-    :return: string link to image
-    """
-    # First, obtain new album to upload to
-    sleep = 60
-    tries = 4
-    while tries:
-        url = "https://imgur.com/upload/checkcaptcha"
-        params = {"total_uploads": "1", "create_album": "true"}
-        headers = {"Accept": "*/*", "Origin": "https://imgur.com", "X-Requested-With": "XMLHttpRequest",
-                   "User-Agent": consts.spoof_user_agent,
-                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                   "Referer": "https://imgur.com/upload",
-                   "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9", "Host": "imgur.com",
-                   "cookie": consts.imgur_spoof_cookie}
-        print("getting imgur album id... ", end="")
-        r = requests.post(url, data=params, headers=headers)
-        try:
-            setup = r.json()
-        except json.decoder.JSONDecodeError as e:
-            if "Imgur is over capacity!" in r.text:
-                print("Imgur is over capacity!")
-                if tries:
-                    time.sleep(sleep)
-                    sleep = sleep * 2
-                    tries -= 1
-                    continue
-                else:
-                    print("Imgur not responding, upload failed!")
-                    return Done
-            print("I have no idea what's going on")
-            print(r.text)
-            print("Press Enter to continue")
-            input()
 
-        print(setup['data']['new_album_id'])
-        # input()
 
-        # Now upload the file to our album id
-        url = "https://imgur.com/upload"
-        headers = {"Accept": "*/*", "Origin": "http://imgur.com",
-                   "User-Agent": consts.spoof_user_agent,
-                   "Referer": "https://imgur.com/upload",
-                   "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9",
-                   "cookie": consts.imgur_spoof_cookie}
-        if type == consts.MP4:
-            files = [
-                ("new_album_id", setup["data"]["new_album_id"]),
-                ("Filedata", ("{}.mp4".format(setup["data"]["new_album_id"]), file, "video/mp4"))]
-        elif type == consts.GIF:
-            files = [
-                ("new_album_id", setup["data"]["new_album_id"]),
-                ("Filedata", ("{}.gif".format(setup["data"]["new_album_id"]), file, "image/gif"))]
-        else:
-            raise Exception("Wrong upload file type")
+    # def authenticate(self, password=False):
+    #     # For some dumb reason it has to be a string
+    #     if password:
+    #         print("Log into {}".format(self.SERVICE_NAME))
+    #         username = input("Username: ")
+    #         password = input("Password: ")
+    #
+    #         data = {"grant_type": "password", "client_id": self.gfyid, "client_secret": self.gfysecret,
+    #                 "username": username, "password": password, "response_type": "token"}
+    #     else:
+    #         data = {"grant_type": "client_credentials", "client_id": self.gfyid,
+    #                 "client_secret": self.gfysecret}
+    #
+    #     url = self.TOKEN_URL
+    #     r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
+    #     try:
+    #         response = r.json()
+    #     except json.decoder.JSONDecodeError as e:
+    #         print(r.text)
+    #         raise
+    #     self.timeout = int(time.time()) + response["expires_in"]
+    #     self.access = response["access_token"]
+    #     self.refresh = response["refresh_token"]
+    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
+    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
+    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
 
-        print("uploading... ", end="")
-        m = MultipartEncoder(fields=files)
-        headers["Content-Type"] = m.content_type
-        r = requests.post(url, headers=headers, data=m)
-        try:
-            upload = r.json()
-        except json.decoder.JSONDecodeError as e:
-            if "Imgur is over capacity!" in r.text:
-                print("Imgur is over capacity!")
-                if tries:
-                    time.sleep(sleep)
-                    sleep = sleep * 2
-                    tries -= 1
-                    continue
-                else:
-                    print("Imgur not responding, upload failed!")
-                    return Done
-
-        if not upload['data'].get('ticket', None):
-            print("wat")
-            pprint(upload)
-
-        print("received wait ticket:", upload['data']['ticket'])
-
-        if type == consts.GIF:
-            image_id = upload["data"]["hash"]
-            image_url = "https://i.imgur.com/{}.gifv".format(image_id)
-            final_url = None
-
-            # Did the upload actually publish?
-            headers = {"User-Agent": consts.spoof_user_agent}
-            # Follow redirect to post URL
-            r = requests.get(image_url, headers=headers)
-            print(r.url)
-            if r.url == "https://i.imgur.com/removed.png":
-                print("GIFV DID NOT GENERATE")
-                # Try gif URL
-                image_url = "https://i.imgur.com/{}.gif".format(image_id)
-                final_url = image_url
-                headers = {"User-Agent": consts.spoof_user_agent}
-                # Follow redirect to post URL
-                r = requests.get(image_url, headers=headers)
-                print(r.url)
-                if r.url == "https://i.imgur.com/removed.png":
-                    print("IMGUR GIF UPLOAD FAILURE")
-                    tries -= 1
-                    if tries:
-                        file.seek(0)
-                        time.sleep(30)
-                        continue
-                    else:
-                        return None
-                else:
-                    print("GIF LINK DOES WORK THOUGH")
-
-            print("Done?", image_url, "https://imgur.com/delete/" + upload["data"]["deletehash"])
-            # image_url = image_url + "\n\nThere's currently an ongoing issue with uploading gifs to Imgur. If this link " \
-            #                        "doesn't work, please report an issue. Thanks!"
-            # input()
-            # gif = OldGif(consts.IMGUR, image_id, url=final_url, log=True, nsfw=nsfw)
-
-        elif type == consts.MP4:
-            # watch ticket to get link
-            url = "https://imgur.com/upload/poll"
-            headers = {"Accept": "*/*", "X-Requested-With": "XMLHttpRequest",
-                       "User-Agent": consts.spoof_user_agent,
-                       "Referer": "https://imgur.com/upload",
-                       "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9",
-                       "cookie": consts.imgur_spoof_cookie}
-            params = {"tickets[]": upload["data"]["ticket"]}
-            print("waiting for processing...", end="")
-            r = requests.get(url, params, headers=headers)
+    def get_token(self):
+        # If the token has expired, request a new one
+        if self.timeout < int(time.time()):
+            data = {"grant_type": "refresh_token", "client_id": self.client_id,
+                    "client_secret": self.client_secret, "refresh_token": self.refresh}
+            # For some dumb reason, data has to be a string
+            r = requests.post(self.OAUTH_BASE + self.TOKEN_URL, data=data, headers={'User-Agent': consts.user_agent})
             try:
-                ticket = r.json()
+                response = r.json()
             except json.decoder.JSONDecodeError as e:
-                if "Imgur is over capacity!" in r.text:
-                    print("Imgur is over capacity!")
-                    if tries:
-                        time.sleep(sleep)
-                        sleep = sleep * 2
-                        tries -= 1
-                        continue
-                    else:
-                        print("Imgur not responding, upload failed!")
-                        return Done
-                print("I have no idea what's going on")
                 print(r.text)
-                input()
+                raise
+            # Sometimes (maybe?) Imgur randomly invalidates refresh tokens >:(
+            if r.status_code == 401:
+                raise InvalidRefreshToken
+            self.timeout = int(time.time()) + response["expires_in"]
+            self.access = response["access_token"]
+            self.refresh = response["refresh_token"]
+            CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
+            CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
+            CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
+        return self.access
 
-            # print(r.text)
-            checks = 13
-            image_id = None
-            while ticket["success"] == True:
-                if ticket["data"]["done"]:
-                    image_id = r.json()["data"]["done"][upload["data"]["ticket"]]
-                    break
-                checks -= 1
-                if not checks:
-                    image_id = None
-                    break
-                time.sleep(5)
-                r = requests.get(url, params, headers=headers)
-                try:
-                    ticket = r.json()
-                except json.decoder.JSONDecodeError as e:
-                    if "Imgur is over capacity!" in r.text:
-                        print("Imgur is over capacity!")
-                        if tries:
-                            time.sleep(sleep)
-                            sleep = sleep * 2
-                            tries -= 1
-                            continue
-                        else:
-                            print("Imgur not responding, upload failed!")
-                            return None
-                    print("I have no idea what's going on")
-                    print(r.text)
-                    input()
-                # print(r.text)
-                print(".", end="")
-            if not image_id:
-                print("IMGUR TIMED OUT")
-                tries -= 1
-                if tries:
-                    file.seek(0)
-                    time.sleep(30)
-                    continue
-                else:
-                    print("IMGUR UPLOAD FAILURE")
-                    return None
+    def get_request(self, url, params=None):
+        # headers = {'Authorization': "Bearer " + self.get_token()}
+        headers = {'Authorization': "Client-ID " + self.client_id}
+        r = requests.get(self.API_BASE + url, headers=headers, params=params)
+        if r.status_code != 200:
+            raise ImgurFailedRequest
+        return r
 
-            # image_url = "https://imgur.com/{}.gifv".format(image_id)
-            # gif = OldGif(consts.IMGUR, image_id, nsfw=nsfw)
-        print("Done!")
-        return image_id
+    def post_request(self, url, data, headers={}):
+        full_headers = {'Authorization': "Bearer " + self.get_token()}
+        # full_headers = {'Authorization': "Client-ID " + self.client_id}
+        if headers:
+            full_headers = {**full_headers, **headers}
+        r = requests.post(self.API_BASE + url, headers=full_headers, data=data)
+        if r.status_code != 200:
+            raise ImgurFailedRequest
+        return r
+
+    def options_request(self, url, headers={}):
+        full_headers = {'Authorization': "Client-ID " + self.client_id}
+        if headers:
+            full_headers = {**full_headers, **headers}
+        r = requests.options(self.API_BASE + url, headers=full_headers)
+        if r.status_code != 200:
+            raise ImgurFailedRequest
+        return r
+
+    def gallery_item(self, id):
+        r = self.get_request(self.GALLERY_ALBUM + id)
+        return r.json()['data']
+
+    def get_album(self, id):
+        r = self.get_request(self.ALBUM + id)
+        return r.json()['data']
+
+    def get_image(self, id):
+        r = self.get_request(self.IMAGE + id)
+        return r.json()['data']
+
+    def upload_image(self, file, media_type, nsfw, audio=False):
+        file.seek(0)
+
+        data = {"type": "file"}
+        if media_type == consts.MP4 or media_type == consts.WEBM:
+            data['video'] = ("video." + media_type, file, "video/" + media_type)
+            data['name'] = "video." + media_type
+        elif media_type == consts.GIF:
+            data['image'] = ("image.gif", file, "image/gif")
+            data['name'] = "image." + media_type
+        m = MultipartEncoder(fields=data)
+        r = self.post_request(self.IMAGE_UPLOAD, m, {'Content-Type': m.content_type})
+        # pprint(r.json())
+        return r.json()['data']['id']
 
 
 imgur = ImgurClient.get()
@@ -294,21 +200,20 @@ class ImgurGif(Gif):
         # Try block for catching imgur 404s
         try:
             if imgur_match[4]:  # Image match
-                id = imgur_match[4]
+                self.pic = imgur.get_image(imgur_match[4])
             elif imgur_match[3]:  # Gallery match
                 gallery = imgur.gallery_item(imgur_match[3])
-                if not isinstance(gallery, GalleryImage):
-                    id = gallery.images[0]['id']  # First image from gallery album
-                else:
-                    id = gallery.id
+                # if not isinstance(gallery, GalleryImage):
+                self.pic = gallery["images"][0]  # First image from gallery album
+                # else:
+                #     id = gallery.id
             elif imgur_match[2]:  # Album match
-                album = imgur.get_album(imgur_match[2])
-                id = album.images[0]['id']  # First image of album
+                self.pic = imgur.get_album(imgur_match[2])["images"][0]
 
-            self.pic = imgur.get_image(id)  # take first image from gallery album
+            id = self.pic["id"]
 
-        except ImgurClientError as e:
-            print("Imgur returned 404, deleted image?", e.status_code)
+        except ImgurFailedRequest as e:
+            print("Imgur returned 404, deleted image?")
             self.pic = None
             id = None
 
@@ -329,7 +234,7 @@ class ImgurGif(Gif):
         self.duration = get_duration(file)
 
         self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration,
-                                  size=self.pic.mp4_size / 1000000))
+                                  size=self.pic.mp4_size/1000000))
 
         # If the file type is a gif, add it as an option and prioritize it
         if self.pic.type == 'image/gif':
@@ -355,12 +260,9 @@ class ImgurHost(GifHost):
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
-        id = imgurupload(file, gif_type, nsfw=nsfw)
+        id = imgur.upload_image(file, gif_type, nsfw=nsfw)
         if id:
             return ImgurGif(cls, id, nsfw=nsfw)
-
-    def __repr__(self):
-        return "asdfasdfas"
 
 
 if __name__ == '__main__':
@@ -368,4 +270,5 @@ if __name__ == '__main__':
     # Follow redirect to post URL
     r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
     if r.url == "https://i.imgur.com/removed.png":
-        pass  # failure
+        pass    # failure
+
