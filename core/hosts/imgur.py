@@ -32,7 +32,7 @@ class ImgurClient:
     GALLERY_ALBUM = "gallery/album/"
     IMAGE = "image/"
     ALBUM = "album/"
-    IMAGE_UPLOAD = "upload"
+    UPLOAD = "upload"
 
     def __init__(self):
         creds = CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]
@@ -71,39 +71,6 @@ class ImgurClient:
         CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
         CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
 
-        # self.timeout = 0
-        # self.get_token()
-
-
-
-
-    # def authenticate(self, password=False):
-    #     # For some dumb reason it has to be a string
-    #     if password:
-    #         print("Log into {}".format(self.SERVICE_NAME))
-    #         username = input("Username: ")
-    #         password = input("Password: ")
-    #
-    #         data = {"grant_type": "password", "client_id": self.gfyid, "client_secret": self.gfysecret,
-    #                 "username": username, "password": password, "response_type": "token"}
-    #     else:
-    #         data = {"grant_type": "client_credentials", "client_id": self.gfyid,
-    #                 "client_secret": self.gfysecret}
-    #
-    #     url = self.TOKEN_URL
-    #     r = requests.post(url, data=str(data), headers={'User-Agent': consts.user_agent})
-    #     try:
-    #         response = r.json()
-    #     except json.decoder.JSONDecodeError as e:
-    #         print(r.text)
-    #         raise
-    #     self.timeout = int(time.time()) + response["expires_in"]
-    #     self.access = response["access_token"]
-    #     self.refresh = response["refresh_token"]
-    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
-    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
-    #     CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
-
     def get_token(self):
         # If the token has expired, request a new one
         if self.timeout < int(time.time()):
@@ -135,12 +102,12 @@ class ImgurClient:
             raise ImgurFailedRequest
         return r
 
-    def post_request(self, url, data, headers={}):
+    def post_request(self, url, data, headers=None, params=None):
         full_headers = {'Authorization': "Bearer " + self.get_token()}
         # full_headers = {'Authorization': "Client-ID " + self.client_id}
         if headers:
             full_headers = {**full_headers, **headers}
-        r = requests.post(self.API_BASE + url, headers=full_headers, data=data)
+        r = requests.post(self.API_BASE + url, headers=full_headers, data=data, params=params)
         if r.status_code != 200:
             raise ImgurFailedRequest
         return r
@@ -169,15 +136,24 @@ class ImgurClient:
     def upload_image(self, file, media_type, nsfw, audio=False):
         file.seek(0)
 
+        api = None
+        params = None
         data = {"type": "file"}
         if media_type == consts.MP4 or media_type == consts.WEBM:
             data['video'] = ("video." + media_type, file, "video/" + media_type)
             data['name'] = "video." + media_type
+            api = self.UPLOAD
+            m = MultipartEncoder(fields=data)
+            r = self.post_request(api, m, {'Content-Type': m.content_type})
+        # We get around the image file size restriction by using a client ID made by a browser
+        # Luckily the API is similarish (rather than last time where it wasn't and also 3 steps)
         elif media_type == consts.GIF:
             data['image'] = ("image.gif", file, "image/gif")
-            data['name'] = "image." + media_type
-        m = MultipartEncoder(fields=data)
-        r = self.post_request(self.IMAGE_UPLOAD, m, {'Content-Type': m.content_type})
+            data['name'] = "image.gif"
+            api = self.UPLOAD
+            params = {'client_id': CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]['imgur_web_id']}
+            m = MultipartEncoder(fields=data)
+            r = requests.post(self.API_BASE + api, headers={'Content-Type': m.content_type}, data=m, params=params)
         # pprint(r.json())
         return r.json()['data']['id']
 
@@ -254,8 +230,8 @@ class ImgurHost(GifHost):
     regex = REPatterns.imgur
     url_template = "https://imgur.com/{}.gifv"
     gif_type = ImgurGif
-    vid_len_limit = 46
-    vid_size_limit = 0
+    vid_len_limit = 0
+    vid_size_limit = 200
     gif_size_limit = 201
 
     @classmethod
