@@ -2,6 +2,7 @@ import urllib
 import time
 import requests
 import json
+from io import BytesIO
 from pprint import pprint
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -9,6 +10,7 @@ from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.hosts import GifHost, Gif, GifFile, NO_NSFW
 from core.regex import REPatterns
+from core.file import get_duration, is_valid
 
 
 class InvalidRefreshToken(Exception):
@@ -155,7 +157,10 @@ class ImgurClient:
             m = MultipartEncoder(fields=data)
             r = requests.post(self.API_BASE + api, headers={'Content-Type': m.content_type}, data=m, params=params)
         # pprint(r.json())
-        return r.json()['data']['id']
+        j = r.json()
+        if not j['data'].get('id', False):
+            print(j)
+        return j['data']['id']
 
 
 imgur = ImgurClient.get()
@@ -200,29 +205,31 @@ class ImgurGif(Gif):
 
         if not self.pic:
             return False
-        pprint(vars(self.pic))
+        # pprint(self.pic)
 
-        if not self.pic.animated:
+        if not self.pic['animated']:
             print("Not a gif!")
             return False
-        r = requests.get(self.pic.mp4)
+        r = requests.get(self.pic['mp4'])
         file = BytesIO(r.content)
         self.duration = get_duration(file)
 
         self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, duration=self.duration,
-                                  size=self.pic.mp4_size/1000000))
+                                  size=self.pic['mp4_size']/1000000))
 
         # If the file type is a gif, add it as an option and prioritize it
-        if self.pic.type == 'image/gif':
-            r = requests.get(self.pic.gifv[:-1])
+        if self.pic['type'] == 'image/gif':
+            r = requests.get(self.pic['gifv'][:-1])
             gif = BytesIO(r.content)
             if is_valid(gif):
                 gif_file = GifFile(gif, host=self.host, gif_type=consts.GIF, duration=self.duration)
-            else:
-                gif_file = GifFile(file, host=self.host, gif_type=consts.GIF, duration=self.duration)
-            self.files.insert(0, gif_file)
-
+            # else:
+            #     gif_file = GifFile(file, host=self.host, gif_type=consts.GIF, duration=self.duration)
+                print("added gif file")
+                self.files.insert(0, gif_file)
+        print(self.files)
         return True
+
 
 
 class ImgurHost(GifHost):
@@ -230,7 +237,7 @@ class ImgurHost(GifHost):
     regex = REPatterns.imgur
     url_template = "https://imgur.com/{}.gifv"
     gif_type = ImgurGif
-    vid_len_limit = 0
+    vid_len_limit = 60
     vid_size_limit = 200
     gif_size_limit = 201
 
