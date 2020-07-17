@@ -35,6 +35,7 @@ class ImgurClient:
     IMAGE = "image/"
     ALBUM = "album/"
     UPLOAD = "upload"
+    IMAGE_UPLOAD = "image"
 
     def __init__(self):
         creds = CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]
@@ -150,12 +151,14 @@ class ImgurClient:
         # We get around the image file size restriction by using a client ID made by a browser
         # Luckily the API is similarish (rather than last time where it wasn't and also 3 steps)
         elif media_type == consts.GIF:
-            data['image'] = ("image.gif", file, "image/gif")
-            data['name'] = "image.gif"
-            api = self.UPLOAD
+            s = requests.Session()
+            api = self.IMAGE_UPLOAD
             params = {'client_id': CredentialsLoader.get_credentials()[self.CREDENTIALS_BLOCK]['imgur_web_id']}
+            r = s.options(self.API_BASE + api, params=params)
+            data['image'] = (file.name, file, "image/gif")
+            data['name'] = file.name
             m = MultipartEncoder(fields=data)
-            r = requests.post(self.API_BASE + api, headers={'Content-Type': m.content_type}, data=m, params=params)
+            r = s.post(self.API_BASE + api, headers={'Content-Type': m.content_type}, data=m, params=params)
         # pprint(r.json())
         j = r.json()
         if not j['data'].get('id', False):
