@@ -196,9 +196,13 @@ def process_mod_invite(reddit, message):
     # Sanity
     if len(subreddit_name) > 2:
         subreddit = reddit.subreddit(subreddit_name)
-        subreddit.mod.accept_invite()
-        print("Accepted moderatership at", subreddit_name)
-        return subreddit_name
+        try:
+            subreddit.mod.accept_invite()
+            print("Accepted moderatership at", subreddit_name)
+            return subreddit_name
+        except praw.exceptions.APIException as e:
+            if e.error_type == "NO_INVITE_FOUND":
+                print("Got an invite from {} which was immediately revoked".format(subreddit_name))
 
 
 def is_reupload_needed(reddit, gif: Gif):
