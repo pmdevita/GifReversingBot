@@ -51,7 +51,7 @@ class StreamableGif(Gif):
         info = streamable.download_video(self.id)
         if not info:
             return False
-        file = BytesIO(requests.get("https:" + info['url']).content)
+        file = BytesIO(requests.get(info['url']).content)
         self.files.append(GifFile(file, host=self.host, gif_type=consts.MP4, audio=False, duration=info['duration'],
                                   size=info['size']/1000000))
         return True
