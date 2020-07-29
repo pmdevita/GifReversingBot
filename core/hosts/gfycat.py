@@ -129,7 +129,7 @@ class GfycatClient:
 
     def upload(self, filestream, media_type, nsfw=False, audio=False, title=None, description=None, noMd5=None):
         # If we hit a problem, restart this segment
-        tries = 3
+        tries = 4
         while tries:
             # get gfyname
             url = self.GFYCAT_CREATE
@@ -220,7 +220,7 @@ class GfycatClient:
                 else:
                     break
             # If there was something wrong, we loop back and try again
-            if ticket["task"] == "NotFoundo" or ticket["task"] == "error":
+            if ticket["task"] == "NotFoundo" or ticket["task"] == "error" or ticket['task'] == "review_issue":
                 print("Error uploading? Trying again", ticket)
                 # Retry block
                 tries -= 1
