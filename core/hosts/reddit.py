@@ -47,7 +47,7 @@ class RedditVid(Gif):
         self.type = consts.MP4
         self.size = file.getbuffer().nbytes / 1000000
         self.files.append(GifFile(file, self.host, self.type, self.size, audio=audio))
-        self.files.append(GifFile(file, self.host, consts.GIF, self.size))
+        # self.files.append(GifFile(file, self.host, consts.GIF, self.size))
         return True
 
 
