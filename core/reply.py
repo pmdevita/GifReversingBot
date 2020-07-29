@@ -4,6 +4,7 @@ from core import constants as consts
 from core.context import CommentContext
 # from core.gif import Gif as GifObject
 from core.hosts import Gif as NewGifObject
+from core.operator import Operator
 from random import randrange
 # from core.credentials import CredentialsLoader
 #
@@ -38,6 +39,7 @@ def reply(context: CommentContext, gif):
         else:
             if reverse_flag:
                 comment = comment.reply(consts.reply_reverse_template.format(message[::-1], message))
+                Operator.instance().message(comment.permalink, "Special Event", False, True)
             else:
                 comment = comment.reply(consts.reply_template.format(message))
         if context.distinguish:
