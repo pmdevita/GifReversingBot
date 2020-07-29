@@ -33,6 +33,7 @@ print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
 db_connected = True
+reject_ids = set(["fzmcyg4"])
 
 # Queue mode
 if args.queue:
@@ -57,6 +58,9 @@ while True:
                 # Comments that arrive the same time the inbox is being checked may not have an ID?
                 if not message.id:
                     new_operator.message("Message had no ID???")
+                    continue
+                if message.id in reject_ids:
+                    continue
                 # username mentions are simple
                 if message.subject == "username mention":
                     result = process_comment(reddit, reddit.comment(message.id), q)
