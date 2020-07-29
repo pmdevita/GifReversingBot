@@ -124,14 +124,15 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         if upload_gif_host == ghm['Redgifs']:
             print("Blocked Redgifs upload")
             cant_upload = False
-            break
+            # break
+            return USER_FAILURE
 
         r = original_gif_file.file
 
         # Reverse it as a GIF
         if original_gif_file.type == consts.GIF:
             # With reversed gif
-            f = reverse_gif(r, format=original_gif_file.type)
+            f = reverse_gif(original_gif_file, format=original_gif_file.type)
             # Give to gif_host's uploader
             reversed_gif_file = GifFile(f, original_gif_file.host, consts.GIF,
                                         duration=original_gif_file.duration, frames=original_gif_file.frames)

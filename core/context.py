@@ -7,6 +7,7 @@ from core.gif import GifHostManager
 from core.hosts import GifHost
 from pprint import pprint
 
+# TODO: Minimize API calls through refresh() https://praw.readthedocs.io/en/latest/code_overview/models/comment.html
 
 class CommentContext:
     def __init__(self, reddit, comment, ghm):

@@ -4,6 +4,7 @@ import json
 import platform
 from core import constants as consts
 from core.file import get_fps
+from core.hosts import GifFile
 
 
 def zeros(number, num_zeros=6):
@@ -11,12 +12,13 @@ def zeros(number, num_zeros=6):
     return "".join(["0" for i in range(num_zeros - len(string))]) + string
 
 
-def reverse_gif(image, path=False, format=consts.GIF):
+def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
     """
     :param image: filestream to reverse
     :param path: if you just want the string path to the file instead of the filestream
     :return: filestream of a gif
     """
+    image = image_file.file
     image.seek(0)
     if platform.system() == 'Windows':
         ffmpeg = '..\\ffmpeg.exe'
@@ -39,10 +41,11 @@ def reverse_gif(image, path=False, format=consts.GIF):
     # with open(filename, "rb") as f:
     #     fps = get_fps(f)
     # Gross hack, fix it later with integrated GifFile metadata
-    if platform.system() == 'Windows':
-        fps = get_fps(image, "../ffprobe")
-    else:
-        fps = get_fps(image)
+    fps = image_file.info.fps
+    # if platform.system() == 'Windows':
+    #     fps = get_fps(image, "../ffprobe")
+    # else:
+    #     fps = get_fps(image)
     print("FPS:", fps)
 
     print("Exporting frames...")
@@ -89,7 +92,7 @@ def reverse_gif(image, path=False, format=consts.GIF):
 
 
     print("Rebuilding gif...")
-    
+
 
     if platform.system() == 'Windows':
         p = subprocess.Popen(
@@ -164,7 +167,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     response = p.communicate(input=mp4.read())
 
-    print(response[0].decode() if response[0] else None, response[1].decode() if response[1] else None)
+    # print(response[0].decode() if response[0] else None, response[1].decode() if response[1] else None)
 
     response = response[0].decode()
     print(os.path.getsize('temp.' + output))
@@ -186,7 +189,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         response = p.communicate()[0].decode()
 
-        print(response)
+        # print(response)
         # Did we fail again?
         # if "partial file" in response or "Cannot allocate memory" in response or os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else 632):
         #     # Just export frames and reconstruct

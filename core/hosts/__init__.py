@@ -2,7 +2,7 @@ import os
 import requests
 from io import BytesIO
 from core import constants as consts
-from core.file import get_frames, get_duration, has_audio, is_valid
+from core.file import get_frames, get_duration, has_audio, is_valid, MediaInfo, estimate_frames_to_pngs
 
 NO_NSFW = 1
 NSFW_ALLOWED = 2
@@ -10,8 +10,9 @@ ONLY_NSFW = 3
 
 
 class GifFile:
-    def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0, audio=None):
+    def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0, audio=None, conversion=None):
         self.file = file
+        self.info = MediaInfo(self.file)
         self.file.seek(0)
         self.type = gif_type
         self.size = None
@@ -19,16 +20,22 @@ class GifFile:
         # Make unified metadata grabber function
 
         if audio is None:
-            self.audio = has_audio(self.file)
+            self.audio = False
         else:
-            self.audio = audio
+            if audio:
+                self.audio = True
+            else:
+                self.audio = has_audio(self.file)
         if gif_type == consts.GIF and not frames:
             self.frames = get_frames(self.file)
+            if self.frames == 0:
+                if self.info.frame_count:
+                    self.frames = self.info.frame_count
         if size:
             self.size = size
         else:
             if isinstance(file, BytesIO):
-                self.size = file.getbuffer().nbytes / 1000000  # Convert to MB
+                self.size = file.getbuffer().nbytes / 1000000
             else:
                 self.size = os.fstat(file.fileno()).st_size / 1000000  # Convert to MB
 
@@ -36,14 +43,17 @@ class GifFile:
             self.duration = duration
         else:
             self.duration = get_duration(self.file)
+
+        self.conversion = conversion
+        if self.conversion:
+            # If we are converting from MP4 to GIF we to need to estimate the resulting size
+            if conversion == consts.MP4 and self.type == consts.GIF:
+                self.pngs_size = estimate_frames_to_pngs(self.info.dimensions[0], self.info.dimensions[1], self.frames)
+
         self.host = host
-        self.file.seek(0)
 
     def __del__(self):
         self.file.close()
-
-    def __repr__(self):
-        return "{}/{}".format(str(self.host), self.type)
 
 
 class Gif:
