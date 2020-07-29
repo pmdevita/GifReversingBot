@@ -60,6 +60,7 @@ while True:
                     new_operator.message("Message had no ID???")
                     continue
                 if message.id in reject_ids:
+                    mark_read.append(message)
                     continue
                 # username mentions are simple
                 if message.subject == "username mention":
