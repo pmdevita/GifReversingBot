@@ -6,6 +6,7 @@ spoof_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/201
 
 sleep_time = 90
 username = CredentialsLoader.get_credentials()['reddit']['username']
+short_name = "GRB"
 
 bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
                  "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=" \

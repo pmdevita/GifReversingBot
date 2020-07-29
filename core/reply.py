@@ -44,12 +44,14 @@ def reply(context: CommentContext, gif):
             comment.mod.distinguish(sticky=True)
 
         print("Successfully reversed and replied!")
-    except praw.exceptions.APIException as err:
-        error = vars(err)
-        if err.error_type == "RATELIMIT":
-            errtokens = error['message'].split()
+    except praw.exceptions.APIException as e:
+        if e.error_type == "RATELIMIT":
+            errtokens = e.message.split()
             print("Oops! Hit the rate limit! Gotta wait " + errtokens[len(errtokens) - 2] + " " + errtokens[
                 len(errtokens) - 1])
+        else:
+            print(e, dir(e))
+            raise e
     except prawcore.exceptions.Forbidden:
         # Probably banned, message the gif to them
         try:
@@ -61,6 +63,3 @@ def reply(context: CommentContext, gif):
             else:
                 print(e, vars(e))
                 raise e
-    except praw.exceptions.APIException as e:
-        print(e, dir(e))
-        raise e

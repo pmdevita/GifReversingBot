@@ -10,6 +10,7 @@ from core import constants as consts
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from core.secret import secret_process
 from core.arguments import parser
+from core.operator import Operator
 from pony.orm.dbapiprovider import OperationalError
 
 credentials = CredentialsLoader().get_credentials()
@@ -24,6 +25,8 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
                      password=credentials['reddit']['password'])
 
 args = parser.parse_args()
+
+new_operator = Operator(reddit, operator, credentials['general'].get('testing', "false").lower() == "true")
 
 print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
@@ -51,6 +54,9 @@ while True:
             # for all unread comments
             if message.was_comment:
                 result = None
+                # Comments that arrive the same time the inbox is being checked may not have an ID?
+                if not message.id:
+                    new_operator.message("Message had no ID???")
                 # username mentions are simple
                 if message.subject == "username mention":
                     result = process_comment(reddit, reddit.comment(message.id), q)
@@ -75,17 +81,16 @@ while True:
                 if message.subject[:22] == 'invitation to moderate':
                     subreddit = process_mod_invite(reddit, message)
                     if subreddit:
-                        reddit.redditor(operator).message("GRB modded!", "GifReversingBot modded in r/{}!".format(subreddit))
+                        new_operator.message("GifReversingBot modded in r/{}!".format(subreddit), "Modded!")
                 elif message.subject in consts.ignore_messages:
                     pass
                 else:
-                    reddit.redditor(operator).message("Someone messaged me!",
-                                                      "Subject: " + message.subject + "\n\nContent:\n\n" + message.body)
+                    new_operator.message(message.subject + "\n\n---\n\n" + message.body, "Message", False, True)
                 mark_read.append(message)
 
             if not db_connected:
                 db_connected = True
-                reddit.redditor(operator).message("GRB Reconnected", "The bot was able to reconnect to the database.")
+                new_operator.message("The bot was able to reconnect to the database.", "DB Reconnected")
             if credentials['general'].get('testing', "false").lower() == "true":
                 print("Press enter to continue or type something to quit")
                 if len(input()):
@@ -118,11 +123,9 @@ while True:
         break
 
     except OperationalError:
-        print("Unable to connect to database")
         if db_connected:
-            reddit.redditor(operator).message("GRB Error", "The bot was unable to connect to the database. If "
-                                                          "connection is reestablished, a follow-up message will be "
-                                                          "sent.")
+            new_operator.message("The bot has disconnected from the database. If connection is reestablished, a "
+                                 "follow-up message will be sent.", "DB Disconnected")
             db_connected = False
         failure_counter = min(failure_counter + 1, 15)
         time.sleep(consts.sleep_time * failure_counter)
@@ -133,7 +136,6 @@ while True:
 
     except Exception as e:
         reddit.inbox.mark_read(mark_read)
-        if mode == "production":
-            reddit.redditor(operator).message("GRB Error!", "Help I crashed!\n\n    {}".format(
-                str(traceback.format_exc()).replace('\n', '\n    ')))
+        new_operator.message("Help I crashed!\n\n    {}".format(str(traceback.format_exc()).replace('\n', '\n    ')),
+                             "Error!", False)
         raise
