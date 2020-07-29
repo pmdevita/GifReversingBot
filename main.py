@@ -26,7 +26,7 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 
 args = parser.parse_args()
 
-new_operator = Operator(reddit, operator, credentials['general'].get('testing', "false").lower() == "true")
+new_operator = Operator(reddit.redditor(operator), credentials['general'].get('testing', "false").lower() == "true")
 
 print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
 
