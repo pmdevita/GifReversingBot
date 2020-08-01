@@ -8,6 +8,7 @@ from core.history import check_database, add_to_database, delete_from_database
 from core import constants as consts
 from core.hosts import GifFile, Gif
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
+from core.operator import Operator
 
 
 def process_comment(reddit, comment=None, queue=None, original_context=None):
@@ -20,6 +21,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
                 print(vars(comment))
                 return USER_FAILURE
         except praw.exceptions.PRAWException as e:
+            Operator.instance().message(str(vars(comment)) + " " + str(vars(e)), "Funny business")
             print(e)
             return USER_FAILURE
 
