@@ -51,17 +51,23 @@ def reply(context: CommentContext, gif):
             errtokens = e.message.split()
             print("Oops! Hit the rate limit! Gotta wait " + errtokens[len(errtokens) - 2] + " " + errtokens[
                 len(errtokens) - 1])
+        elif e.error_type == "THREAD_LOCKED":
+            reply_message(comment, url)
         else:
             print(e, dir(e))
             raise e
     except prawcore.exceptions.Forbidden:
         # Probably banned, message the gif to them
-        try:
-            comment.author.message(consts.reply_ban_subject, consts.reply_ban_template.format(url))
-            print("Successfully reversed and messaged!")
-        except praw.exceptions.APIException as e:
-            if e.error_type == "NOT_WHITELISTED_BY_USER_MESSAGE":
-                print("Lol this user has a whitelist, there is no way to message them, giving up")
-            else:
-                print(e, vars(e))
-                raise e
+        reply_message(comment, url)
+
+
+def reply_message(comment, url):
+    try:
+        comment.author.message(consts.reply_ban_subject, consts.reply_ban_template.format(url))
+        print("Successfully reversed and messaged!")
+    except praw.exceptions.APIException as e:
+        if e.error_type == "NOT_WHITELISTED_BY_USER_MESSAGE":
+            print("Lol this user has a whitelist, there is no way to message them, giving up")
+        else:
+            print(e, vars(e))
+            raise e
