@@ -74,6 +74,7 @@ while True:
                     failure = True
                     print("Upload failed, not removing from queue")
                 else:
+                    new_operator.message("Returned without a return code????" + str(vars(message)))
                     mark_read.append(message)
             else:  # was a message
                 # if message.first_message == "None":
