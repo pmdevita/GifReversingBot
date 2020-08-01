@@ -1,5 +1,4 @@
 praw
-imgurpython
 requests
 requests_toolbelt
 pony

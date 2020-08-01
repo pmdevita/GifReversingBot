@@ -204,7 +204,7 @@ class ImgurGif(Gif):
         return id
 
     def analyze(self) -> bool:
-        """Analyze an imgur gif using the imgurpython library and determine how to reverse and upload"""
+        """Analyze an imgur gif and determine how to reverse and upload"""
 
         if not self.pic:
             return False
