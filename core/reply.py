@@ -53,6 +53,8 @@ def reply(context: CommentContext, gif):
                 len(errtokens) - 1])
         elif e.error_type == "THREAD_LOCKED":
             reply_message(comment, url)
+        elif e.error_type == "DELETED_COMMENT":
+            print("Comment was deleted, can't reply")
         else:
             print(e, dir(e))
             raise e
