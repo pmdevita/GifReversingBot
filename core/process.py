@@ -21,9 +21,13 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
                 print(vars(comment))
                 return USER_FAILURE
         except praw.exceptions.PRAWException as e:
-            Operator.instance().message(str(vars(comment)) + " " + str(vars(e)), "Funny business")
-            print(e)
-            return USER_FAILURE
+            # Operator.instance().message(str(vars(comment)) + " " + str(vars(e)), "Funny business")
+            # print(e)
+            # I expected this to be a user failure since I thought it would mean the comment is getting
+            # removed. However, it seems that this happens when the comment is too new for Reddit to
+            # return any data on it. So if we mark it as an UPLOAD_FAILURE, we should be able to return
+            # to it later and it should work then???
+            return UPLOAD_FAILURE
 
         print("New request by " + comment.author.name)
 
