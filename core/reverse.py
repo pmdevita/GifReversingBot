@@ -5,6 +5,7 @@ import platform
 from core import constants as consts
 from core.file import get_fps
 from core.hosts import GifFile
+from core.operator import Operator
 
 
 def zeros(number, num_zeros=6):
@@ -174,9 +175,10 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     # Weird thing
     # A blank mp4 is 48 bytes, a blank webm is ~~632 bytes~~
     # Blank webm might be larger actually, using a percentage of the size of the original
-    if output == consts.WEBM:
-        print("Checking if under", mp4.getbuffer().nbytes / 100)
-    if "partial file" in response or "Cannot allocate memory" in response or os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else (mp4.getbuffer().nbytes / 100)):
+    # if output == consts.WEBM:
+    #     print("Checking if under", mp4.getbuffer().nbytes / 100)
+    if "partial file" in response or "Cannot allocate memory" in response or \
+            os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else (mp4.getbuffer().nbytes / 100)):
         """"frame=    0 fps=0.0 q=0.0 size=       1kB time=00:00:00.00 bitrate=N/A"""
         """"frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00"""
         print("FFMPEG gave weird error, putting in file to reverse")
@@ -225,8 +227,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
         os.remove(in_file)
 
-    reversed_file = open("temp." + output, "rb")
-
-    return reversed_file
-
-
+    if os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else 632):
+        return [os.path.getsize('temp.' + output), output]
+    else:
+        return open("temp." + output, "rb")

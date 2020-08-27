@@ -143,6 +143,13 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         else:
             f = reverse_mp4(r, original_gif_file.audio, format=original_gif_file.type,
                             output=upload_gif_host.video_type)
+            if isinstance(f, list):
+                Operator.instance().message(
+                    "It appears the video was too big to be reversed\n\n{} from {} {}{} {}"
+                        .format(new_original_gif.url, comment.author, "NSFW " if context.nsfw else "", *f),
+                    "Notification")
+                cant_upload = False
+                return USER_FAILURE
             reversed_gif_file = GifFile(f, original_gif_file.host, upload_gif_host.video_type,
                                         duration=original_gif_file.duration, audio=original_gif_file.audio)
             # reversed_gif = upload_gif_host.upload(f, upload_gif_host.video_type, new_original_gif.context.nsfw)
