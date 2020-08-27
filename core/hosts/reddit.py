@@ -44,6 +44,13 @@ class RedditVid(Gif):
             file = concat(file, BytesIO(r.content))
             audio = True
 
+        if not audio:
+            # Audio could be here instead
+            r = requests.get("https://v.redd.it/{}/audio".format(self.id), headers=headers)
+            if r.status_code == 200:
+                file = concat(file, BytesIO(r.content))
+                audio = True
+
         self.type = consts.MP4
         self.size = file.getbuffer().nbytes / 1000000
         self.files.append(GifFile(file, self.host, self.type, self.size, audio=audio))
