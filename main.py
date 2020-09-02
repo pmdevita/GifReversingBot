@@ -66,6 +66,7 @@ while True:
                         result = process_comment(reddit, reddit.comment(message.id), q)
                     else:
                         secret_process(reddit, message)
+                        result = SUCCESS
                 # Depending on success or other outcomes, we mark the message read
                 if result == SUCCESS or result == USER_FAILURE:
                     mark_read.append(message)
