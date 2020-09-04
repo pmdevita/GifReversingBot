@@ -8,15 +8,13 @@ sleep_time = 90
 username = CredentialsLoader.get_credentials()['reddit']['username']
 short_name = "GRB"
 
-bot_footer = "---\n\n^(I am a bot.) [^(Report an issue)]" \
-                 "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=" \
-             "Add a link to the gif or comment in your message%2C I'm not always sure which request is being " \
-             "reported. Thanks for helping me out!)"
+issue_link = "https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=" \
+             "Add a link to the gif or comment in your message%2C I%27m not always sure which request is being " \
+             "reported. Thanks for helping me out!"
 
-bot_footer_reversed = "---\n\n[^(eussi na tropeR)]" \
-                 "(https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=" \
-             "Add a link to the gif or comment in your message%2C I'm not always sure which request is being " \
-             "reported. Thanks for helping me out!) ^(.tob a ma I)"
+bot_footer = f"---\n\n^(I am a bot.) [^(Report an issue)]({issue_link})"
+
+bot_footer_reversed = f"---\n\n[^(eussi na tropeR)]({issue_link}) ^(.tob a ma I)"
 
 nsfw_reply_template = "##NSFW\n\nHere is your gif!\n{}\n\n" + bot_footer
 
