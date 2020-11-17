@@ -9,6 +9,17 @@ NSFW_ALLOWED = 2
 ONLY_NSFW = 3
 
 
+# Message constants
+# If a host is unable/unwilling to accept a specific gif
+class CannotUpload:
+    pass
+
+
+# If a host had a temporary failure/problem that inhibited the upload
+class UploadFailed:
+    pass
+
+
 class GifFile:
     def __init__(self, file, host=None, gif_type=None, size=None, duration=None, frames=0, audio=None, conversion=None):
         self.file = file

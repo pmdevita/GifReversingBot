@@ -94,7 +94,7 @@ class CommentContext:
                 # IF this is layer 0, this is an Automoderator summon. Check if we are doing a comment replacement
                 if layer == 0:
                     # Delete comment if a moderator
-                    modded_subs = [i.name for i in reddit.user.moderator_subreddits()]
+                    modded_subs = [i.name for i in reddit.user.me().moderated()]
                     if reddit_object.subreddit.name in modded_subs:
                         self.comment = reddit_object.parent()
                         if reddit_object.stickied:

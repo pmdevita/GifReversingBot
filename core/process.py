@@ -2,11 +2,11 @@ from io import BytesIO
 import praw.exceptions
 from core.context import CommentContext
 from core.reply import reply
-from core.gif import GifHostManager, CANNOT_UPLOAD, UPLOAD_FAILED
+from core.gif import GifHostManager
 from core.reverse import reverse_mp4, reverse_gif
 from core.history import check_database, add_to_database, delete_from_database
 from core import constants as consts
-from core.hosts import GifFile, Gif
+from core.hosts import GifFile, Gif, UploadFailed, CannotUpload
 from core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from core.operator import Operator
 
@@ -170,11 +170,11 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             result = options[0]['hosts'][0].upload(reversed_gif_file.file, reversed_gif_file.type,
                                                    new_original_gif.nsfw, reversed_gif_file.audio)
             # If the host simply cannot accept this file at all
-            if result == CANNOT_UPLOAD:
+            if result == CannotUpload:
                 cant_upload = True
                 break
             # If the host was unable to accept the gif at this time
-            elif result == UPLOAD_FAILED:
+            elif result == UploadFailed:
                 cant_upload = False
                 continue  # Try again?
             # No error and not None, success!

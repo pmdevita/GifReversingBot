@@ -129,9 +129,9 @@ while True:
         failure_counter = min(failure_counter + 1, 15)
         time.sleep(consts.sleep_time * failure_counter)
 
-    except ConnectionError:
-        print('A connection was unable to be established')
-        time.sleep(consts.sleep_time * 2)
+    # except ConnectionError:
+    #     print('A connection was unable to be established')
+    #     time.sleep(consts.sleep_time * 2)
 
     except Exception as e:
         reddit.inbox.mark_read(mark_read)

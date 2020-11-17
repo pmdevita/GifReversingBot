@@ -1,4 +1,5 @@
 import urllib
+import traceback
 import time
 import requests
 import json
@@ -8,7 +9,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from core.credentials import CredentialsLoader
 from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile, NO_NSFW
+from core.hosts import GifHost, Gif, GifFile, NO_NSFW, UploadFailed, CannotUpload
 from core.regex import REPatterns
 from core.file import get_duration, is_valid
 
@@ -106,16 +107,23 @@ class ImgurClient:
         return r
 
     def post_request(self, url, data, headers=None, params=None):
-        full_headers = {'Authorization': "Bearer " + self.get_token()}
-        # full_headers = {'Authorization': "Client-ID " + self.client_id}
+        # full_headers = {'Authorization': "Bearer " + self.get_token()}
+        full_headers = {'Authorization': "Client-ID " + self.client_id}
         if headers:
             full_headers = {**full_headers, **headers}
-        r = requests.post(self.API_BASE + url, headers=full_headers, data=data, params=params)
+        try:
+            r = requests.post(self.API_BASE + url, headers=full_headers, data=data, params=params)
+        except Exception as e:
+            print(self.API_BASE + url, full_headers, data, params)
+            # print(r, r.content)
+            raise e
         if r.status_code != 200:
+            print(self.API_BASE + url, full_headers, data, params)
+            print(r, r.content)
             raise ImgurFailedRequest
         return r
 
-    def options_request(self, url, headers={}):
+    def options_request(self, url, headers=None):
         full_headers = {'Authorization': "Client-ID " + self.client_id}
         if headers:
             full_headers = {**full_headers, **headers}
@@ -137,6 +145,19 @@ class ImgurClient:
         return r.json()['data']
 
     def upload_image(self, file, media_type, nsfw, audio=False):
+        # Attempt upload 3 times
+        try:
+            for i in range(3):
+                response = self._upload_image(file, media_type, nsfw, audio)
+                if isinstance(response, str):
+                    return response
+                time.sleep(5)
+            return UploadFailed
+        except requests.ConnectionError as e:
+            print(e, traceback.format_exc())
+            raise e
+
+    def _upload_image(self, file, media_type, nsfw, audio=False):
         file.seek(0)
 
         api = None
@@ -163,6 +184,9 @@ class ImgurClient:
         j = r.json()
         if not j['data'].get('id', False):
             print(j)
+            if j['data'].get('error', False):
+                print("Error:", j['data']['error'])
+                return None
         return j['data']['id']
 
 
@@ -252,9 +276,9 @@ class ImgurHost(GifHost):
 
 
 if __name__ == '__main__':
-    headers = {"User-Agent": consts.spoof_user_agent}
-    # Follow redirect to post URL
-    r = requests.get("https://imgur.com/Ttg37Fd.gifv", headers=headers)
-    if r.url == "https://i.imgur.com/removed.png":
-        pass    # failure
+    client = ImgurClient()
+    with open("../../temp.mp4", 'rb') as f:
+        results = client.upload_image(f, consts.MP4, False, False)
+        print(results)
+
 
