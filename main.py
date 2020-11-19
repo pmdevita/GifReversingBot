@@ -86,7 +86,9 @@ while True:
                 else:
                     new_operator.message(message.subject + "\n\n---\n\n" + message.body, "Message", False, True)
                 mark_read.append(message)
-
+            if len(mark_read) >= 5:     # Mark read every 5 in a batch to avoid a small chance of disaster
+                reddit.inbox.mark_read(mark_read)
+                mark_read.clear()
             if not db_connected:
                 db_connected = True
                 new_operator.message("The bot was able to reconnect to the database.", "DB Reconnected")
@@ -95,8 +97,9 @@ while True:
                 if len(input()):
                     print("You can now safely end the process")
                     break
-        reddit.inbox.mark_read(mark_read)
-        mark_read.clear()
+        if mark_read:
+            reddit.inbox.mark_read(mark_read)
+            mark_read.clear()
         if failure:
             print("An upload failed, extending wait")
             # failure_counter += 1
