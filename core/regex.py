@@ -40,7 +40,7 @@ class REPatterns:
     reddit_submission = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/[\w%]+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)(.+))?")
 
     # Gif link
-    link_gif = re.compile("(https?://\S*\.gif)")
+    link_gif = re.compile("(https?://\S*?\.gif(\?.*)?(?=\s|$|\b))")
 
     # NSFW
     nsfw_text = re.compile("(nsfw)", re.I)
