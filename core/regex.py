@@ -40,7 +40,7 @@ class REPatterns:
     reddit_submission = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/[\w%]+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)(.+))?")
 
     # Gif link
-    link_gif = re.compile("(https?://\S*?\.gif(\?.*)?(?=\s|$|\b))")
+    link_gif = re.compile("(https?://\S*?\.gif(?:\?.*)?(?=\s|$|\b))")
 
     # NSFW
     nsfw_text = re.compile("(nsfw)", re.I)
@@ -50,11 +50,6 @@ class REPatterns:
 
 
 if __name__ == '__main__':
-    print(type(REPatterns.reddit_submission.search("Here is your gif!\nhttps://files.catbox.moe/ohpyy5.mp4\n\n---\n\n^(I am a bot.) [^(Report an issue)](https://www.reddit.com/message/compose/?to=pmdevita&subject=GifReversingBot%20Issue&message=Add a link to the gif or comment in your message%2C I'm not always sure which request is being reported. Thanks for helping me out!)").group()))
-    r = REPatterns.reddit_submission.findall("https://www.redddit.com/r/pmdevita/comments/bn7x1a/")[0]
-    print(r)
-    for i in r:
-        if i:
-            print("hi")
+    print(REPatterns.link_gif.findall("https://media4.giphy.com/media/VaZps4e5JECKSmtdOH/giphy.gif"))
 
 

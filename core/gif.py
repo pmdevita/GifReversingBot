@@ -96,7 +96,7 @@ class GifHostManager:
                     print("Not within params of host", host, gif_file)
             if file_hosts:
                 acceptable_files.append({"file": gif_file, "hosts": file_hosts})
-        return acceptable_files if acceptable_files else None
+        return acceptable_files if acceptable_files else []
 
     def _within_host_params(self, host: GifHost, gif: NewGif, gif_file: GifFile):
         """Determine whether a GifFile is within a GifHost's limitations"""
