@@ -30,8 +30,8 @@ class CatboxGif(Gif):
         file = BytesIO(r.content)
         if not is_valid(file):
             return False
-        file = GifFile(file, self.host, consts.GIF)
-        self.files.append(file)
+        gif_file = GifFile(file, self.host, consts.GIF)
+        self.files.append(gif_file)
         vid_file = GifFile(file, self.host, self.id.split(".")[-1], audio=False)
         if self.id[-3:] == consts.GIF:
             self.files.append(vid_file)
