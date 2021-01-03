@@ -24,7 +24,11 @@ class RedditVid(Gif):
             try:
                 if submission.is_video:
                     if submission.media:
-                        url = submission.media['reddit_video']['fallback_url']
+                        if submission.media['reddit_video'].get('fallback_url', None):
+                            url = submission.media['reddit_video']['fallback_url']
+                        elif submission.media['reddit_video'].get("transcoding_status", None) == "error":
+                            print("Reddit had an error transcoding this video")
+                            return False
                     else:
                         print("Submission is video but there is no media data")
                         return False
@@ -75,8 +79,12 @@ class RedditVideoHost(GifHost):
             if subregex:
                 if subregex[0][2]:
                     reddit = cls.ghm.reddit
-                    submission = reddit.submission(subregex[0][2])
-                    regex = cls.regex.findall(submission.url)
+                    try:
+                        submission = reddit.submission(subregex[0][2])
+                        regex = cls.regex.findall(submission.url)
+                    except ResponseException:
+                        print("Submission does not exist")
+                        return None
                     if regex:
                         # Modify text to be a v.redd.it link for down the line parsing
                         text = submission.url
