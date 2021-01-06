@@ -89,9 +89,13 @@ class GfycatClient:
         except json.decoder.JSONDecodeError as e:
             print(r.text)
             raise
-        self.timeout = int(time.time()) + response["expires_in"]
-        self.access = response["access_token"]
-        self.refresh = response["refresh_token"]
+        try:
+            self.timeout = int(time.time()) + response["expires_in"]
+            self.access = response["access_token"]
+            self.refresh = response["refresh_token"]
+        except KeyError:
+            print(r.text)
+            raise
         CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'refresh_token', self.refresh)
         CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'access_token', self.access)
         CredentialsLoader.set_credential(self.CREDENTIALS_BLOCK, 'token_expiration', str(self.timeout))
@@ -155,7 +159,18 @@ class GfycatClient:
                 metadata = r.json()
             except json.decoder.JSONDecodeError:
                 print(r.text)
-                raise
+                if r.status_code == 401:
+                    # Retry block
+                    tries -= 1
+                    if tries:
+                        if media_type != consts.LINK:
+                            filestream.seek(0)
+                        time.sleep(5)
+                        continue
+                    else:
+                        break
+                else:
+                    raise
 
             if 'gfyname' not in metadata:
                 print(metadata)
