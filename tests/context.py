@@ -3,6 +3,7 @@ import praw
 from core.credentials import CredentialsLoader
 from core import constants as consts
 from core.context import CommentContext
+from core.gif import GifHostManager
 
 """These tests rely on comments on in my test subreddit so they'll need some work for other people to use"""
 
@@ -15,16 +16,21 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
                      username=credentials['reddit']['username'],
                      password=credentials['reddit']['password'])
 
+
+ghm = GifHostManager(reddit=reddit)
+
+
 # Assert subset of dict is deprecated soooo....
 def extractDictAFromB(A,B):
     return dict([(k,B[k]) for k in A.keys() if k in B.keys()])
+
 
 class ContextTests(unittest.TestCase):
     def test_normal(self):
         correct = {'comment': 't1_ekf4i80', 'rereverse': False, 'unnecessary_manual': False, 'nsfw': False,
                    'distinguish': False, 'reupload': False, 'url': 'https://imgur.com/5PVtWsf.gifv'}
         comment = reddit.comment('ekf4i80')
-        context = CommentContext(reddit, comment)
+        context = CommentContext(reddit, comment, ghm)
         obj = context.to_json()
         print(obj)
         self.assertEqual(correct, extractDictAFromB(correct, obj))
