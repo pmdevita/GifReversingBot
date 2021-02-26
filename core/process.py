@@ -33,6 +33,8 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
 
         # Create the comment context object
         context = CommentContext(reddit, comment, ghm)
+        # Add context to operator in case we need to log it later
+        Operator.set_request_info(context.to_json())
         if not context.url:  # Did our search return nothing?
             print("Didn't find a URL")
             return USER_FAILURE

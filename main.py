@@ -67,6 +67,7 @@ while True:
                     else:
                         secret_process(reddit, message)
                         result = SUCCESS
+                new_operator.unset_request_info()
                 # Depending on success or other outcomes, we mark the message read
                 if result == SUCCESS or result == USER_FAILURE:
                     mark_read.append(message)
