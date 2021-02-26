@@ -2,6 +2,7 @@ import json
 import subprocess
 import os
 from io import BytesIO
+from .operator import Operator
 
 # These functions need to be combined for optimization and cleanliness
 # They are doing a lot of the sames stuff already so it's turned into a mess
@@ -23,7 +24,7 @@ class MediaInfo:
         self.video = self.get_video_stream(self.data['streams'])
         self.audio = self.get_audio_stream(self.data['streams'])
         # If it's a gif, we need to save it to the drive first
-        if self.video['codec_name'] == 'gif':
+        if self.video['codec_name'] == 'gif' and file_type == FILESTREAM_TYPE:
             self.temp_download = "mediainfo.gif"
             with open(self.temp_download, 'wb') as f:
                 filestream.seek(0)
@@ -45,27 +46,54 @@ class MediaInfo:
                 self.frame_count = int(self.video['nb_frames'])
             else:
                 self.frame_count = None
+            # Duration
+            if self.format.get('duration', False):
+                self.duration = float(self.format['duration'])
+            else:
+                self.duration = None
             # FPS
             fps = None
             if self.video.get('r_frame_rate', False):
                 fps = self.video['r_frame_rate'].split("/")
-                if fps[1] == "0" and self.video.get('avg_frame_rate', False):
-                    fps = self.video['r_frame_rate'].split("/")
+                # If r_frame_rate is a divide by zero or just straight up 100FPS try to use the average
+                if (fps[1] == "0" or (fps[0] == "100" and fps[1] == "1" and self.video['codec_name'] == 'gif')) \
+                        and self.video.get('avg_frame_rate', False):
+                    fps = self.video['avg_frame_rate'].split("/")
             elif self.video.get('avg_frame_rate', False):
                 fps = self.video['avg_frame_rate'].split("/")
             if fps:
                 if fps[1] != "0":
                     self.fps = int(fps[0]) / int(fps[1])
                 else:
-                    print(data, fps)
+                    print(self.data, fps)
+                # If we have a frame count, verify that the frame_count / fps = duration within some margin
+                if self.frame_count and self.duration:
+                    expected_duration = self.frame_count / self.fps
+                    MARGIN_OF_ERROR = .15  # Must be within 15% of duration
+                    if abs((expected_duration / self.duration) - 1) >= MARGIN_OF_ERROR:
+                        # FPS must be incorrect, estimate it from duration and frame count
+                        previous_fps = self.fps
+                        self.fps = self.frame_count / self.duration
+                        Operator.context_message(f"FFProbe said FPS is {previous_fps} but given a duration of "
+                                                 f"{self.duration} and a frame count of {self.frame_count}, this should"
+                                                 f" be closer to {self.fps}.", subject="MediaInfo")
             else:
-                fps = None
-        # Duration
-        if self.format.get('duration', False):
-            self.duration = float(self.format['duration'])
-        else:
-            self.duration = 0
-
+                # No FPS, estimate it if we have duration and frame count
+                if self.frame_count and self.duration:
+                    self.fps = self.frame_count / self.duration
+                    Operator.context_message(f"No FPS was determined for this media, guessed it to be {self.fps}.",
+                                             subject="MediaInfo")
+                else:
+                    self.fps = None
+                    Operator.context_message("No FPS was determined for this media, didn't have frame "
+                                             "count to guess either.",
+                                             subject="MediaInfo")
+        # If we don't have duration still, guess it
+        if not self.duration:
+            if self.frame_count and self.fps:
+                self.duration = self.frame_count / self.fps
+            else:
+                self.duration = 0
         if self.temp_download:
             os.remove(self.temp_download)
 
@@ -206,6 +234,10 @@ def estimate_frames_to_gif(width, height, frames):
     return round((width * height * frames) * PIXEL_TO_SIZE / 1000000, 2)
 
 if __name__ == '__main__':
-    print(estimate_frames_to_pngs(1280, 720, 2699))
+    import requests
+    r = requests.get("https://i.redd.it/lhbqeh1x75e61.gif")
+    b = BytesIO(r.content)
+    m = MediaInfo(b)
+    print(m.fps)
 
 
