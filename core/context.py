@@ -41,9 +41,10 @@ class CommentContext:
     def to_json(self):
         data = {}
         for i in vars(self):
-            if i[0] != "_" or i == "comment":
+            if i[0] != "_" and i != "ghm":
                 data[i] = self.__getattribute__(i)
         data['comment'] = self.comment.name
+        data['url'] = str(self.url)
         return data
 
     def determine_target_url(self, reddit, reddit_object, layer=0, checking_manual=False):
