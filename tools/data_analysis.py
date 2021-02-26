@@ -18,7 +18,7 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 
 ps = PushshiftAPI(reddit)
 
-print("GifReversingBot Data Analysis v{} Ctrl+C to stop".format(consts.version))
+print(f"{consts.bot_name} Data Analysis v{consts.version} Ctrl+C to stop")
 
 start = int(dt.datetime(2018, 9, 16).timestamp())
 end = int(dt.datetime(2019, 9, 14).timestamp())

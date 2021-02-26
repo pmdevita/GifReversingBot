@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 new_operator = Operator(reddit.redditor(operator), credentials['general'].get('testing', "false").lower() == "true")
 
-print("GifReversingBot v{} Ctrl+C to stop".format(consts.version))
+print(f"{consts.bot_name} v{consts.version} Ctrl+C to stop")
 
 mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier

@@ -19,7 +19,7 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 
 ghm = GifHostManager(reddit)
 
-print("GifReversingBot Console v{}".format(consts.version))
+print(f"{consts.bot_name} Console v{consts.version}")
 
 
 
