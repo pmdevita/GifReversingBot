@@ -53,7 +53,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
 
     # Reverse filenames
     p = subprocess.Popen(
-        [ffmpeg, "-loglevel", "quiet", "-i", filename, "original%06d.png"]
+        [ffmpeg, "-loglevel", "quiet", "-i", filename, "-vsync", "0", "original%06d.png"]
     )
     # Reverse frame order in export
     # p = subprocess.Popen(
