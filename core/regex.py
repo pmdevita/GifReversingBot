@@ -37,7 +37,7 @@ class REPatterns:
     link = re.compile("\[.*?\] *\n? *\((.*?)\)")
 
     # Reddit submission link
-    reddit_submission = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{3,21}))(?(2)/comments/(\w{6})(?:/[\w%]+)?)?(?(3)/(\w{7}))?/?(\?)?(?(5)(.+))?")
+    reddit_submission = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{2,21}))(/comments/)?(?(3)(\w{6})(?:/[\w%\\\\-]+)?)?(?(4)/(\w{7}))?/?(\?)?(?(6)(\S+))?")
 
     # Gif link
     link_gif = re.compile("(https?://\S*?\.gif(?:\?.*)?(?=\s|$|\b))")

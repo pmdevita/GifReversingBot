@@ -19,8 +19,8 @@ class RedditVid(Gif):
         if not submission_id:
             print("Deleted?")
             return False
-        elif submission_id[0][2]:
-            submission = self.host.ghm.reddit.submission(id=submission_id[0][2])
+        elif submission_id[0][3]:
+            submission = self.host.ghm.reddit.submission(id=submission_id[0][3])
             try:
                 if submission.is_video:
                     if submission.media:
@@ -77,10 +77,10 @@ class RedditVideoHost(GifHost):
             # Parse submission urls
             subregex = REPatterns.reddit_submission.findall(text)
             if subregex:
-                if subregex[0][2]:
+                if subregex[0][3]:
                     reddit = cls.ghm.reddit
                     try:
-                        submission = reddit.submission(subregex[0][2])
+                        submission = reddit.submission(subregex[0][3])
                         regex = cls.regex.findall(submission.url)
                     except ResponseException:
                         print("Submission does not exist")
@@ -106,7 +106,7 @@ class RedditVideoHost(GifHost):
         # print(cls.regex.findall(text), REPatterns.reddit_submission.findall(text))
         sub = REPatterns.reddit_submission.findall(text)
         if sub:
-            if sub[0][2]:
+            if sub[0][3]:
                 return True
         return len(cls.regex.findall(text)) != 0
 
