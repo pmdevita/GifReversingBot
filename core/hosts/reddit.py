@@ -41,6 +41,9 @@ class RedditVid(Gif):
             return False
 
         r = requests.get(url)
+        if r.status_code != 200:
+            print("Getting Reddit Video returned status, deleted?", r.status_code)
+            return False
         file = BytesIO(r.content)
 
         r = requests.get("https://v.redd.it/{}/DASH_audio.mp4".format(self.id), headers=headers)
