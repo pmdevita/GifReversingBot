@@ -1,4 +1,5 @@
 import requests
+import re
 from io import BytesIO
 from prawcore.exceptions import ResponseException
 
@@ -8,12 +9,14 @@ from core.regex import REPatterns
 from core.file import get_duration, get_fps
 from core.concat import concat
 
+REDDIT_SUBMISSION = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{2,21}))(/comments/)?(?(3)(\w{6})(?:/[\w%\\\\-]+)?)?(?(4)/(\w{7}))?/?(\?)?(?(6)(\S+))?")
+
 
 class RedditVid(Gif):
     def analyze(self) -> bool:
         headers = {"User-Agent": consts.spoof_user_agent}
         r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
-        submission_id = REPatterns.reddit_submission.findall(r.url)
+        submission_id = REDDIT_SUBMISSION.findall(r.url)
         url = None
         audio = False
         if not submission_id:
@@ -67,7 +70,7 @@ class RedditVid(Gif):
 
 class RedditVideoHost(GifHost):
     name = "RedditVideo"
-    regex = REPatterns.reddit_vid
+    regex = re.compile("https?://v.redd.it/(\w+)")
     url_template = "https://v.redd.it/{}"
     gif_type = RedditVid
     can_gif = False
@@ -78,7 +81,7 @@ class RedditVideoHost(GifHost):
         url = None
         if text:
             # Parse submission urls
-            subregex = REPatterns.reddit_submission.findall(text)
+            subregex = REDDIT_SUBMISSION.findall(text)
             if subregex:
                 if subregex[0][3]:
                     reddit = cls.ghm.reddit
@@ -107,7 +110,7 @@ class RedditVideoHost(GifHost):
     @classmethod
     def match(cls, text):
         # print(cls.regex.findall(text), REPatterns.reddit_submission.findall(text))
-        sub = REPatterns.reddit_submission.findall(text)
+        sub = REDDIT_SUBMISSION.findall(text)
         if sub:
             if sub[0][3]:
                 return True
@@ -123,7 +126,7 @@ class RedditGif(Gif):
 
 class RedditGifHost(GifHost):
     name = "RedditGif"
-    regex = REPatterns.reddit_gif
+    regex = re.compile("http(?:s)?://i.redd.it/(.*?)\.gif")
     url_template = "https://i.redd.it/{}.gif"
     gif_type = RedditGif
     can_gif = False

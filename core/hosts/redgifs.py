@@ -14,7 +14,6 @@ class RedgifsGif(GfycatGif):
 
 class RedgifsHost(GfycatHost):
     name = "Redgifs"
-    regex = REPatterns.gfycat
     url_template = "https://redgifs.com/{}"
     gif_type = RedgifsGif
     NSFW = ONLY_NSFW

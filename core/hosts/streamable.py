@@ -1,4 +1,5 @@
 import requests
+import re
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from io import BytesIO
 from core.credentials import CredentialsLoader
@@ -59,7 +60,7 @@ class StreamableGif(Gif):
 
 class StreamableHost(GifHost):
     name = "Streamable"
-    regex = REPatterns.streamable
+    regex = re.compile("https?://streamable.com/([a-z0-9]*)")
     url_template = "https://streamable.com/{}"
     audio = True
     gif_type = StreamableGif

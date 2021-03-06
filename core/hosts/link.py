@@ -1,5 +1,6 @@
 import requests
 import time
+import re
 from io import BytesIO
 
 from core.hosts import GifHost, Gif, GifFile, get_response_size
@@ -32,7 +33,7 @@ class LinkGif(Gif):
 
 class LinkGifHost(GifHost):
     name = "LinkGif"
-    regex = REPatterns.link_gif
+    regex = re.compile("(https?://\S*?\.gif(?:\?.*)?(?=\s|$|\b))")
     url_template = "{}"
     gif_type = LinkGif
     priority = 10

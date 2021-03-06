@@ -2,6 +2,7 @@ import json
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import time
+import re
 from math import ceil
 from io import BytesIO
 from pprint import pprint
@@ -12,7 +13,7 @@ from core.hosts import GifHost, Gif, GifFile, NO_NSFW
 from core.regex import REPatterns
 
 ENCODE_TIMEOUT = 3200
-WAIT = 7
+WAIT = 8
 ENCODE_LOOPS = ceil(ENCODE_TIMEOUT / WAIT)
 
 
@@ -315,7 +316,7 @@ class GfycatGif(Gif):
 
 class GfycatHost(GifHost):
     name = "Gfycat"
-    regex = REPatterns.gfycat
+    regex = re.compile("https?://(?:\w+?\.)?gfycat\.com/(?:(?:\S*?/)(?!/))*([a-zA-Z]*)")
     url_template = "https://gfycat.com/{}"
     gif_type = GfycatGif
     audio = True

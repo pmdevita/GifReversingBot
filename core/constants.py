@@ -2,7 +2,7 @@ from core.credentials import CredentialsLoader
 
 bot_name = "GifReversingBot"
 short_name = "GRB"
-version = "3.3.2"
+version = "3.3.3"
 user_agent = f"{bot_name} v{version} by /u/pmdevita"
 spoof_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0"
 

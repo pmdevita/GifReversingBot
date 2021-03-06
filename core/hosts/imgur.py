@@ -3,6 +3,7 @@ import traceback
 import time
 import requests
 import json
+import re
 from io import BytesIO
 from pprint import pprint
 from requests_toolbelt.multipart.encoder import MultipartEncoder
@@ -203,7 +204,7 @@ class ImgurGif(Gif):
         elif isinstance(id, str):
             return id
         else:
-            imgur_match = REPatterns.imgur.findall(url)[0]
+            imgur_match = self.host.regex.findall(url)[0]
         id = None
         # Try block for catching imgur 404s
         try:
@@ -261,7 +262,8 @@ class ImgurGif(Gif):
 
 class ImgurHost(GifHost):
     name = "Imgur"
-    regex = REPatterns.imgur
+    regex = re.compile("http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>[a-zA-Z0-9]{5,7})|(?(2)("
+                       "?P<gallery_id>[a-zA-Z0-9]{5,7})|(?P<image_id>[a-zA-Z0-9]{5,7})))(?:\S*)")
     url_template = "https://imgur.com/{}.gifv"
     gif_type = ImgurGif
     vid_len_limit = 60
