@@ -162,7 +162,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
     # command = "ffmpeg -loglevel {loglevel} -i pipe:0 -y temp.{output}".format(output=output, **params)
 
-    print(command)
+    # print(command)
     command = command.split()
 
     p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -171,7 +171,8 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     # print(response[0].decode() if response[0] else None, response[1].decode() if response[1] else None)
 
     response = response[0].decode()
-    print(os.path.getsize('temp.' + output))
+    # print(os.path.getsize('temp.' + output))
+
     # Weird thing
     # A blank mp4 is 48 bytes, a blank webm is ~~632 bytes~~
     # Blank webm might be larger actually, using a percentage of the size of the original

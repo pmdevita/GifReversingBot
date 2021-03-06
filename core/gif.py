@@ -91,9 +91,9 @@ class GifHostManager:
             for host in priority:
                 if self._within_host_params(host, gif, gif_file):
                     file_hosts.append(host)
-                    print("Decided to upload to", str(host), gif_file)
-                else:
-                    print("Not within params of host", host, gif_file)
+                #     print("Decided to upload to", str(host), gif_file)
+                # else:
+                #     print("Not within params of host", host, gif_file)
             if file_hosts:
                 acceptable_files.append({"file": gif_file, "hosts": file_hosts})
         return acceptable_files if acceptable_files else []

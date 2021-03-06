@@ -168,6 +168,7 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
             continue
 
         # Using the provided host, perform the upload
+        print("Attempting to upload to", options[0]['hosts'][0].name)
         for i in range(2):
             result = options[0]['hosts'][0].upload(reversed_gif_file.file, reversed_gif_file.type,
                                                    new_original_gif.nsfw, reversed_gif_file.audio)
