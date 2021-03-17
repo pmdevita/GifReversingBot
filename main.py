@@ -81,7 +81,7 @@ while True:
                 if message.subject[:22] == 'invitation to moderate':
                     subreddit = process_mod_invite(reddit, message)
                     if subreddit:
-                        new_operator.message(f"{consts.bot_name} modded in r/{}!".format(subreddit), "Modded!")
+                        new_operator.message(f"{consts.bot_name} modded in r/{subreddit}!", "Modded!")
                 elif message.subject in consts.ignore_messages:
                     pass
                 else:

@@ -6,6 +6,7 @@ from core.context import CommentContext
 from core.hosts import Gif as NewGifObject
 from core.operator import Operator
 from random import randrange
+from datetime import datetime
 # from core.credentials import CredentialsLoader
 #
 # credentials = CredentialsLoader().get_credentials()
@@ -22,10 +23,15 @@ def reply(context: CommentContext, gif):
 
     comment = context.comment
 
-    reverse_flag = randrange(0, 3000) == 0 and not context.unnecessary_manual and not context.distinguish and not nsfw
+    reverse_flag = False
+    if not context.unnecessary_manual and not context.distinguish and not nsfw:
+        date = datetime.now()
+        if date.month == 4 and date.day == 1:
+            reverse_flag = randrange(0, 4) == 0
+        else:
+            reverse_flag = randrange(0, 3000) == 0
     # if comment.author.name == credentials['general']['operator']:
     #     print("Hi", credentials['general']['operator'])
-    #     reverse_flag = True
 
     # Assemble prefixing messages
     message = url
