@@ -202,8 +202,11 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
         add_to_database(new_original_gif, uploaded_gif)
         # Reply
         print("Replying!", uploaded_gif.url)
-        reply(context, uploaded_gif)
-        return SUCCESS
+        result = reply(context, uploaded_gif)
+        if result:
+            return SUCCESS
+        else:
+            return UPLOAD_FAILURE
     else:
         return UPLOAD_FAILURE
 

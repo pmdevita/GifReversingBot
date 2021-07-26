@@ -54,9 +54,8 @@ def reply(context: CommentContext, gif):
         print("Successfully reversed and replied!")
     except praw.exceptions.APIException as e:
         if e.error_type == "RATELIMIT":
-            errtokens = e.message.split()
-            print("Oops! Hit the rate limit! Gotta wait " + errtokens[len(errtokens) - 2] + " " + errtokens[
-                len(errtokens) - 1])
+            print(e.message)
+            return False
         elif e.error_type == "THREAD_LOCKED":
             reply_message(comment, url)
         elif e.error_type == "DELETED_COMMENT":
@@ -67,6 +66,7 @@ def reply(context: CommentContext, gif):
     except prawcore.exceptions.Forbidden:
         # Probably banned, message the gif to them
         reply_message(comment, url)
+    return True
 
 
 def reply_message(comment, url):
