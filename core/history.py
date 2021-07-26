@@ -9,6 +9,7 @@ from core.credentials import CredentialsLoader
 
 db = Database()
 
+
 def bind_db(db):
     creds = CredentialsLoader.get_credentials()['database']
 
@@ -33,6 +34,7 @@ class GifHosts(db.Entity):
     origin_gifs = Set('Gif', reverse='origin_host')
     reversed_gifs = Set('Gif', reverse='reversed_host')
 
+
 class Gif(db.Entity):
     id = PrimaryKey(int, auto=True)
     origin_host = Required(GifHosts, reverse='origin_gifs')
@@ -48,6 +50,7 @@ class Gif(db.Entity):
 bind_db(db)
 
 ghm = GifHostManager()
+
 
 def sync_hosts():
     # Double check gifhost bindings

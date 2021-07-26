@@ -217,7 +217,13 @@ class ImgurGif(Gif):
                 # else:
                 #     id = gallery.id
             elif imgur_match[2]:  # Album match
-                self.pic = imgur.get_album(imgur_match[2])["images"][0]
+                images = imgur.get_album(imgur_match[2])["images"]
+                if len(images):
+                    self.pic = images[0]
+                else:
+                    print("Imgur album has no pictures")
+                    self.pic = None
+                    return None
 
             id = self.pic["id"]
 
