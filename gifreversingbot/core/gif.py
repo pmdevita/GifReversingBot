@@ -3,13 +3,14 @@ from operator import itemgetter
 
 import os
 import importlib
+import praw
 from gifreversingbot.core import constants as consts
 from gifreversingbot.hosts import NO_NSFW, ONLY_NSFW, GifFile, Gif as NewGif, GifHost
 
 
 class GifHostManager:
     hosts = []
-    reddit = None
+    reddit: praw.Reddit = None
     vid_priority = []
     gif_priority = []
     host_names = {}

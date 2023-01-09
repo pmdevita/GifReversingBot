@@ -3,6 +3,9 @@ import requests
 from io import BytesIO
 from gifreversingbot.core import constants as consts
 from gifreversingbot.core.file import get_frames, get_duration, has_audio, MediaInfo, estimate_frames_to_pngs
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from gifreversingbot.core.gif import GifHostManager
 
 NO_NSFW = 1
 NSFW_ALLOWED = 2
@@ -71,7 +74,7 @@ class Gif:
     process_id = False
 
     def __init__(self, host, id, context=None, url=None, nsfw=False):
-        self.host = host
+        self.host: GifHost = host
         self.context = context
         if self.context:
             self.nsfw = self.context.nsfw or nsfw
@@ -119,7 +122,7 @@ class GifHost:
     regex = None
     url_template = None
     priority = 0
-    ghm = None
+    ghm: "GifHostManager" = None
     gif_type = Gif
     # Can upload gif
     can_gif = True

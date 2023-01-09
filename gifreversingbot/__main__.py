@@ -15,7 +15,8 @@ from pony.orm.dbapiprovider import OperationalError
 
 credentials = CredentialsLoader().get_credentials()
 
-mode = credentials['general']['mode']
+is_production = credentials['general'].get('mode', "production").lower() == "production"
+step_requests = credentials['general'].get('step_requests', "false").lower() == "true"
 operator = credentials['general']['operator']
 
 reddit = praw.Reddit(user_agent=consts.user_agent,
@@ -26,7 +27,7 @@ reddit = praw.Reddit(user_agent=consts.user_agent,
 
 args = parser.parse_args()
 
-new_operator = Operator(reddit.redditor(operator), credentials['general'].get('testing', "false").lower() == "true")
+new_operator = Operator(reddit.redditor(operator), is_production)
 
 mark_read = []
 
