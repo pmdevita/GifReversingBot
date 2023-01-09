@@ -63,6 +63,8 @@ def reply(context: CommentContext, gif):
         elif e.error_type == "TOO_OLD":
             print("Post is archived, messaging")
             reply_message(comment, url)
+        elif e.error_type == "INVALID_USER":
+            print("User is invalid(?)")
         else:
             print(e, dir(e))
             raise e
