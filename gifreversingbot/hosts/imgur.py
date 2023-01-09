@@ -9,7 +9,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from gifreversingbot.core.credentials import CredentialsLoader
 from gifreversingbot.core import constants as consts
-from gifreversingbot.core.hosts import UploadFailed, GifFile, Gif, GifHost
+from gifreversingbot.hosts import UploadFailed, GifFile, Gif, GifHost
 from gifreversingbot.core.file import get_duration, is_valid
 
 
@@ -286,7 +286,7 @@ class ImgurHost(GifHost):
 
 if __name__ == '__main__':
     client = ImgurClient()
-    with open("../../../temp.mp4", 'rb') as f:
+    with open("../../temp.mp4", 'rb') as f:
         results = client.upload_image(f, consts.MP4, False, False)
         print(results)
 

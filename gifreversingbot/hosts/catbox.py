@@ -3,7 +3,7 @@ from requests_toolbelt import MultipartEncoder
 import re
 from io import BytesIO
 
-from gifreversingbot.core.hosts import GifFile, Gif, GifHost
+from gifreversingbot.hosts import GifFile, Gif, GifHost
 from gifreversingbot.core.credentials import CredentialsLoader
 from gifreversingbot.core import constants as consts
 from gifreversingbot.core.file import is_valid

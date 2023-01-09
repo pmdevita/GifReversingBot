@@ -2,7 +2,7 @@ import subprocess
 import os
 import platform
 from gifreversingbot.core import constants as consts
-from gifreversingbot.core.hosts import GifFile
+from gifreversingbot.hosts import GifFile
 
 
 def zeros(number, num_zeros=6):

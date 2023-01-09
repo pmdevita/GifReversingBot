@@ -3,7 +3,7 @@ import time
 import re
 from io import BytesIO
 
-from gifreversingbot.core.hosts import GifFile, Gif, GifHost, get_response_size
+from gifreversingbot.hosts import GifFile, Gif, GifHost, get_response_size
 from gifreversingbot.core import constants as consts
 
 

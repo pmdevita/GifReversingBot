@@ -4,7 +4,7 @@ from operator import itemgetter
 import os
 import importlib
 from gifreversingbot.core import constants as consts
-from gifreversingbot.core.hosts import NO_NSFW, ONLY_NSFW, GifFile, Gif as NewGif, GifHost
+from gifreversingbot.hosts import NO_NSFW, ONLY_NSFW, GifFile, Gif as NewGif, GifHost
 
 
 class GifHostManager:
@@ -17,7 +17,7 @@ class GifHostManager:
     def __init__(self, reddit=None):
         if not self.hosts:
             # Dynamically load gif hosts
-            files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "hosts"))
+            files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../hosts"))
             for f in files:
                 #  __init__.py or __pycache__
                 if f[:2] != "__" and f[-3:] == ".py":

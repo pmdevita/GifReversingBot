@@ -3,7 +3,7 @@ import prawcore.exceptions
 from gifreversingbot.core import constants as consts
 from gifreversingbot.core.context import CommentContext
 # from core.gif import Gif as GifObject
-from gifreversingbot.core.hosts import Gif as NewGifObject
+from gifreversingbot.hosts import Gif as NewGifObject
 from gifreversingbot.core.operator import Operator
 from random import randrange
 from datetime import datetime

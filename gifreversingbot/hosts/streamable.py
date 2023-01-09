@@ -3,7 +3,7 @@ import re
 from io import BytesIO
 from gifreversingbot.core.credentials import CredentialsLoader
 from gifreversingbot.core import constants as consts
-from gifreversingbot.core.hosts import GifFile, Gif, GifHost
+from gifreversingbot.hosts import GifFile, Gif, GifHost
 
 
 class StreamableClient:

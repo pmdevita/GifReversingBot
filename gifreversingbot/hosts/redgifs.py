@@ -1,5 +1,5 @@
-from gifreversingbot.core.hosts.gfycat import GfycatHost, GfycatGif, GfycatClient
-from gifreversingbot.core.hosts import ONLY_NSFW
+from gifreversingbot.hosts.gfycat import GfycatHost, GfycatGif, GfycatClient
+from gifreversingbot.hosts import ONLY_NSFW
 import gifreversingbot.core.constants as consts
 
 

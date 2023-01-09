@@ -3,7 +3,7 @@ from datetime import date
 from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, Set
 
 from gifreversingbot.core.gif import GifHostManager
-from gifreversingbot.core.hosts import Gif as NewGif_object, GifHost
+from gifreversingbot.hosts import Gif as NewGif_object, GifHost
 from gifreversingbot.core.credentials import CredentialsLoader
 
 db = Database()

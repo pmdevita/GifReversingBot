@@ -5,7 +5,7 @@ from gifreversingbot.core.gif import GifHostManager
 from gifreversingbot.core.reverse import reverse_mp4, reverse_gif
 from gifreversingbot.core.history import check_database, add_to_database, delete_from_database
 from gifreversingbot.core import constants as consts
-from gifreversingbot.core.hosts import CannotUpload, UploadFailed, GifFile, Gif
+from gifreversingbot.hosts import CannotUpload, UploadFailed, GifFile, Gif
 from gifreversingbot.core.constants import SUCCESS, USER_FAILURE, UPLOAD_FAILURE
 from gifreversingbot.core.operator import Operator
 
