@@ -60,6 +60,9 @@ def reply(context: CommentContext, gif):
             reply_message(comment, url)
         elif e.error_type == "DELETED_COMMENT":
             print("Comment was deleted, can't reply")
+        elif e.error_type == "TOO_OLD":
+            print("Post is archived, messaging")
+            reply_message(comment, url)
         else:
             print(e, dir(e))
             raise e
@@ -79,3 +82,4 @@ def reply_message(comment, url):
         else:
             print(e, vars(e))
             raise e
+    return True
