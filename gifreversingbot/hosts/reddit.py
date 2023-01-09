@@ -14,6 +14,10 @@ class RedditVid(Gif):
     def analyze(self) -> bool:
         headers = {"User-Agent": consts.spoof_user_agent}
         r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
+        if r.status_code == 404:
+            print("Reddit returned a 404 for this video")
+            return False
+
         submission_regex = REDDIT_SUBMISSION.findall(r.url)
         url = None
         audio = False
