@@ -7,38 +7,37 @@ from gifreversingbot.core import constants as consts
 from gifreversingbot.hosts import GifFile, Gif, GifHost
 from gifreversingbot.core.concat import concat
 
-REDDIT_SUBMISSION = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{2,21}))(/comments/)?(?(3)(\w{6})(?:/[\w%\\\\-]+)?)?(?(4)/(\w{7}))?/?(\?)?(?(6)(\S+))?")
+REDDIT_SUBMISSION = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{2,21}))(/comments/)?(?(3)(\w{7})(?:/[\w%\\\\-]+)?)?(?(4)/(\w{7}))?/?(\?)?(?(6)(\S+))?")
 
 
 class RedditVid(Gif):
     def analyze(self) -> bool:
         headers = {"User-Agent": consts.spoof_user_agent}
         r = requests.get("https://v.redd.it/{}".format(self.id), headers=headers)
-        submission_id = REDDIT_SUBMISSION.findall(r.url)
+        submission_regex = REDDIT_SUBMISSION.findall(r.url)
         url = None
         audio = False
-        if not submission_id:
+
+        if not submission_regex:
             print("Deleted?")
             return False
-        elif submission_id[0][3]:
-            submission = self.host.ghm.reddit.submission(id=submission_id[0][3])
-            try:
-                if submission.is_video:
-                    if submission.media:
-                        if submission.media['reddit_video'].get('fallback_url', None):
-                            url = submission.media['reddit_video']['fallback_url']
-                        elif submission.media['reddit_video'].get("transcoding_status", None) == "error":
-                            print("Reddit had an error transcoding this video")
-                            return False
-                    else:
-                        print("Submission is video but there is no media data")
-                        return False
-            except ResponseException as e:
-                print("Video is inaccessible, likely deleted")
-                return False
 
-        else:  # Maybe it was deleted?
-            print("Deleted?")
+        submission_id = submission_regex[0][3]
+        submission = self.host.ghm.reddit.submission(submission_id)
+        try:
+            if not submission.is_video:
+                print("Reddit submission is not marked as a video.")
+                return False
+            if not submission.media:
+                print("Submission is video but there is no media data")
+                return False
+            if submission.media['reddit_video'].get('fallback_url', None):
+                url = submission.media['reddit_video']['fallback_url']
+            elif submission.media['reddit_video'].get("transcoding_status", None) == "error":
+                print("Reddit had an error transcoding this video")
+                return False
+        except ResponseException as e:
+            print("Video is inaccessible, likely deleted")
             return False
 
         r = requests.get(url)
