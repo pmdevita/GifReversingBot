@@ -21,6 +21,9 @@ class LinkGif(Gif):
             print("got rejected, waiting for a second")
             time.sleep(15)
             r = requests.get(self.url, headers=headers)
+        if r.status_code != requests.codes.ok:
+            print("Got an error code for gif", r.status_code)
+            return False
         header = r.content[:3]
         if header != b'GIF':
             return None
