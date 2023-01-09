@@ -3,6 +3,7 @@ import prawcore
 from requests.exceptions import ConnectionError
 import time
 import traceback
+from datetime import datetime, timedelta
 from core.process import process_comment, process_mod_invite
 from core.credentials import CredentialsLoader
 from core.regex import REPatterns
@@ -34,14 +35,9 @@ mark_read = []
 failure_counter = 1  # 1 by default since it is the wait timer multiplier
 db_connected = True
 
-# Queue mode
-if args.queue:
-    # Normal
-    q = None
-else:
-    # Use the queue
-    from core.queue import Queue
-    q = Queue()
+cutoff = None
+if args.cutoff:
+    cutoff = int(args.cutoff)
 
 while True:
     try:
@@ -57,13 +53,18 @@ while True:
                 # Comments that arrive the same time the inbox is being checked may not have an ID?
                 if not message.id:
                     new_operator.message("Message had no ID???")
+                if cutoff:
+                    if datetime.utcfromtimestamp(message.created_utc) < datetime.now() - timedelta(days=cutoff):
+                        print("Skipping older message")
+                        mark_read.append(message)
+                        continue    # Skips the 5 message mark read step but probably fine
                 # username mentions are simple
                 if message.subject == "username mention":
-                    result = process_comment(reddit, reddit.comment(message.id), q)
+                    result = process_comment(reddit, reddit.comment(message.id))
                 # if it was a reply, check to see if it contained a summon
                 elif message.subject == "comment reply" or message.subject == "post reply":
                     if REPatterns.reply_mention.findall(message.body):
-                        result = process_comment(reddit, reddit.comment(message.id), q)
+                        result = process_comment(reddit, reddit.comment(message.id))
                     else:
                         secret_process(reddit, message)
                         result = SUCCESS
@@ -76,8 +77,6 @@ while True:
                     failure = True
                     print("Upload failed, not removing from queue")
             else:  # was a message
-                # if message.first_message == "None":
-                #     message.reply("Sorry, I'm only a bot! I'll contact my creator /u/pmdevita for you.")
                 if message.subject[:22] == 'invitation to moderate':
                     subreddit = process_mod_invite(reddit, message)
                     if subreddit:
@@ -106,9 +105,6 @@ while True:
             # failure_counter += 1
         else:
             failure_counter = 1
-
-        if q:
-            q.clean()
 
         time.sleep(consts.sleep_time * failure_counter)
 
