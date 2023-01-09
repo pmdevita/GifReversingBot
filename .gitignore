@@ -107,3 +107,5 @@ venv.bak/
 *.mp4
 *.webm
 *.gif
+*.sqlite
+credentials.ini
