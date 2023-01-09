@@ -3,6 +3,7 @@ import os
 import platform
 from gifreversingbot.core import constants as consts
 from gifreversingbot.hosts import GifFile
+from gifreversingbot.utils.temp_folder import TempFolder
 
 
 def zeros(number, num_zeros=6):
@@ -19,111 +20,72 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
     image = image_file.file
     image.seek(0)
     if platform.system() == 'Windows':
-        ffmpeg = '..\\ffmpeg.exe'
-        ffprobe = '..\\ffprobe'
-        gifski = '..\\gifski.exe'
+        ffmpeg = 'ffmpeg.exe'
+        ffprobe = 'ffprobe'
+        gifski = 'gifski.exe'
     else:
         ffmpeg = 'ffmpeg'
         ffprobe = 'ffprobe'
         gifski = 'gifski'
 
     print("Reversing gif...")
-    os.chdir("temp")
+    with TempFolder("grbreverse") as temp_folder:
+        filename = temp_folder / ("in." + format)
 
-    filename = "in." + format
+        with open(filename, "wb") as f:
+            f.write(image.read())
 
-    with open(filename, "wb") as f:
-        f.write(image.read())
+        fps = image_file.info.fps
+        print("FPS:", fps)
 
-    # Get correct fps
-    # with open(filename, "rb") as f:
-    #     fps = get_fps(f)
-    # Gross hack, fix it later with integrated GifFile metadata
-    fps = image_file.info.fps
-    # if platform.system() == 'Windows':
-    #     fps = get_fps(image, "../ffprobe")
-    # else:
-    #     fps = get_fps(image)
-    print("FPS:", fps)
+        print("Exporting frames...")
 
-    print("Exporting frames...")
-
-    # Reverse filenames
-    p = subprocess.Popen(
-        [ffmpeg, "-loglevel", "quiet", "-i", filename, "-vsync", "0", "original%06d.png"]
-    )
-    # Reverse frame order in export
-    # p = subprocess.Popen(
-    #     [ffmpeg, "-loglevel", "info", "-i", "-vf", "reverse", filename, "frame%06d.png"]
-    # )
-    response = p.communicate()
-
-    if platform.system() == 'Windows':
+        # Reverse filenames
         subprocess.Popen(
-            ["del", "/Q", filename],
-            shell=True
-        ).communicate()
-    else:
-        subprocess.Popen(
-            ["rm {}".format(filename)],
-            shell=True
+            [ffmpeg, "-loglevel", "quiet", "-i", str(filename), "-vsync", "0", temp_folder / "original%06d.png"]
         ).communicate()
 
+        os.remove(filename)
 
-    # Reverse filenames
-    for i in os.walk("../../core"):
-        files = i[2]
-        break
+        # Reverse filenames
+        for i in os.walk(temp_folder):
+            files = i[2]
+            break
 
-    counter = len(files)
-    for i in range(1, len(files) + 1):
-        os.rename("original{}.png".format(zeros(i)), "frame{}.png".format(zeros(counter)))
-        counter -= 1
+        counter = len(files)
+        for i in range(1, len(files) + 1):
+            os.rename(temp_folder / "original{}.png".format(zeros(i)),
+                      temp_folder / "frame{}.png".format(zeros(counter)))
+            counter -= 1
 
-    # Statistics
-    for i in os.walk("../../core"):
-        files = i[2]
-        break
+        # Statistics
+        for i in os.walk(temp_folder):
+            files = i[2]
+            break
 
-    pics_size = sum(os.path.getsize(f) for f in files)
-    print(pics_size)
+        pics_size = sum(os.path.getsize(temp_folder / f) for f in files)
+        print(pics_size)
 
+        print("Rebuilding gif...")
 
-    print("Rebuilding gif...")
+        if platform.system() == 'Windows':
+            p = subprocess.Popen(
+                [gifski, "-o", "temp.gif", "--fps", str(max(round(fps), 1)), temp_folder / "frame*.png"],
+                shell=True
+            )
+        else:
+            p = subprocess.Popen(
+                [f"{gifski} -o temp.gif --fps {str(max(round(fps), 1))} {temp_folder / 'frame*.png'}"],
+                shell=True
+            )
 
+        p.communicate()
 
-    if platform.system() == 'Windows':
-        p = subprocess.Popen(
-            ['{}'.format(gifski), "-o", "../temp.gif", "--fps", str(max(round(fps), 1)), "frame*.png"],
-            shell=True
-        )
-    else:
-        p = subprocess.Popen(
-            ['{} -o ../temp.gif --fps {} frame*.png'.format(gifski, str(max(round(fps), 1)))],
-            shell=True
-        )
-
-    response = p.communicate()
-
-    print("done")
-
-    if platform.system() == 'Windows':
-        subprocess.Popen(
-            ["del", "/Q", "*"],
-            shell=True
-        ).communicate()
-    else:
-        subprocess.Popen(
-            ["rm *"],
-            shell=True
-        ).communicate()
-
-
-    os.chdir("../..")
+        print("done")
 
     # More statistics
     gif_size = os.path.getsize("temp.gif")
-    print("pngs size, gif size, ratio", pics_size / 1000000, gif_size / 1000000, gif_size/pics_size)
+    print("pngs size, gif size, ratio", pics_size / 1000000, gif_size / 1000000, gif_size / pics_size)
 
     if path:
         return "temp.gif"
