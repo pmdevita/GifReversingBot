@@ -1,5 +1,5 @@
 from praw.models import Redditor
-import core.constants as consts
+import gifreversingbot.core.constants as consts
 import json
 
 

@@ -5,12 +5,10 @@ import time
 import re
 from math import ceil
 from io import BytesIO
-from pprint import pprint
 
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile, NO_NSFW
-from core.regex import REPatterns
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import NO_NSFW, GifFile, Gif, GifHost
 
 ENCODE_TIMEOUT = 3200
 WAIT = 8

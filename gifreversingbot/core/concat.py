@@ -87,7 +87,7 @@ def vid_to_gif(image, path=False):
         ).communicate()
 
     # Statistics
-    for i in os.walk("."):
+    for i in os.walk("../../core"):
         files = i[2]
         break
     pics_size = sum(os.path.getsize(f) for f in files)
@@ -123,7 +123,7 @@ def vid_to_gif(image, path=False):
         ).communicate()
 
 
-    os.chdir("..")
+    os.chdir("../..")
 
     # More statistics
     gif_size = os.path.getsize("temp.gif")

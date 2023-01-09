@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "gifreversingbot"
+version = "3.4.0"
+description = "A Reddit bot that reverses gifs"
+authors = ["Peter DeVita <mewtwo2643@yahoo.com>"]
+license = "GPL"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+praw = "^7.6.1"
+requests = "^2.28.1"
+requests-toolbelt = "^0.10.1"
+pony = "^0.7.16"
+pymysql = "^1.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+gifreversingbot = 'gifreversingbot.__main__:main'

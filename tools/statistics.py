@@ -1,16 +1,11 @@
 import praw
-import prawcore
-import time
-import traceback
-from core.credentials import CredentialsLoader
-from core.regex import REPatterns
-from core import constants as consts
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
 
-from pprint import pprint
 import json
 import datetime
 from collections import defaultdict
-from core.gif import GifHostManager
+from gifreversingbot.core.gif import GifHostManager
 
 credentials = CredentialsLoader().get_credentials()
 

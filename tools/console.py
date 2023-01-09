@@ -1,10 +1,7 @@
 import praw
-import datetime
-import pony
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.gif import GifHostManager
-from core.regex import REPatterns
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.gif import GifHostManager
 
 credentials = CredentialsLoader().get_credentials()
 

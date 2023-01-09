@@ -1,7 +1,6 @@
-from core.regex import REPatterns
-from core.hosts.gfycat import GfycatHost, GfycatGif, GfycatClient
-from core.hosts import ONLY_NSFW
-import core.constants as consts
+from gifreversingbot.core.hosts.gfycat import GfycatHost, GfycatGif, GfycatClient
+from gifreversingbot.core.hosts import ONLY_NSFW
+import gifreversingbot.core.constants as consts
 
 
 class RedgifsClient(GfycatClient):

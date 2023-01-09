@@ -1,11 +1,10 @@
 import requests
 import re
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 from io import BytesIO
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile
-from core.regex import REPatterns
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import GifFile, Gif, GifHost
+
 
 class StreamableClient:
     instance = None

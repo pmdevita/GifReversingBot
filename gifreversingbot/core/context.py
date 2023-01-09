@@ -1,11 +1,8 @@
-from typing import Optional
 import praw.models
 from praw.const import API_PATH
-from core import constants as consts
-from core.regex import REPatterns
-from core.gif import GifHostManager
-from core.hosts import GifHost
-from pprint import pprint
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.regex import REPatterns
+
 
 # TODO: Minimize API calls through refresh() https://praw.readthedocs.io/en/latest/code_overview/models/comment.html
 

@@ -3,11 +3,9 @@ import re
 from io import BytesIO
 from prawcore.exceptions import ResponseException
 
-from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile
-from core.regex import REPatterns
-from core.file import get_duration, get_fps
-from core.concat import concat
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import GifFile, Gif, GifHost
+from gifreversingbot.core.concat import concat
 
 REDDIT_SUBMISSION = re.compile("http(?:s)?://(?:\w+?\.)?reddit.com(/r/|/user/)?(?(1)(\w{2,21}))(/comments/)?(?(3)(\w{6})(?:/[\w%\\\\-]+)?)?(?(4)/(\w{7}))?/?(\?)?(?(6)(\S+))?")
 

@@ -3,10 +3,10 @@ from requests_toolbelt import MultipartEncoder
 import re
 from io import BytesIO
 
-from core.hosts import GifHost, Gif, GifFile
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.file import is_valid
+from gifreversingbot.core.hosts import GifFile, Gif, GifHost
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.file import is_valid
 
 catbox_hash = CredentialsLoader.get_credentials()['catbox']['hash']
 

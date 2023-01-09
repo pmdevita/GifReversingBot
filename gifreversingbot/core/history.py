@@ -1,11 +1,10 @@
 # Manage a database of the last few months reverses and their links in order to save time
 from datetime import date
-from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit, Set, desc
+from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, Set
 
-from core.gif import GifHostManager
-from core.hosts import Gif as NewGif_object
-from core.hosts import GifHost
-from core.credentials import CredentialsLoader
+from gifreversingbot.core.gif import GifHostManager
+from gifreversingbot.core.hosts import Gif as NewGif_object, GifHost
+from gifreversingbot.core.credentials import CredentialsLoader
 
 db = Database()
 
@@ -14,7 +13,7 @@ def bind_db(db):
     creds = CredentialsLoader.get_credentials()['database']
 
     if creds['type'] == 'sqlite':
-        db.bind(provider='sqlite', filename='../database.sqlite', create_db=True)
+        db.bind(provider='sqlite', filename='../../database.sqlite', create_db=True)
     elif creds['type'] == 'mysql':
         # Check for SSL arguments
         ssl = {}

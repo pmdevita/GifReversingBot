@@ -2,7 +2,7 @@ import json
 import subprocess
 import os
 from io import BytesIO
-from .operator import Operator
+from gifreversingbot.core.operator import Operator
 
 # These functions need to be combined for optimization and cleanliness
 # They are doing a lot of the sames stuff already so it's turned into a mess

@@ -1,6 +1,5 @@
-from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, commit, Json, Set, count, raw_sql
-from core.history import bind_db
-from random import getrandbits
+from pony.orm import Database, PrimaryKey, Required, Optional, db_session, select, Json, Set, count
+from gifreversingbot.core.history import bind_db
 from uuid import getnode
 
 """If the bot has a large backlog of requests, we can queue a bunch of reverse tasks to distribute load"""

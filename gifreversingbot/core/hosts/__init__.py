@@ -1,8 +1,8 @@
 import os
 import requests
 from io import BytesIO
-from core import constants as consts
-from core.file import get_frames, get_duration, has_audio, is_valid, MediaInfo, estimate_frames_to_pngs
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.file import get_frames, get_duration, has_audio, MediaInfo, estimate_frames_to_pngs
 
 NO_NSFW = 1
 NSFW_ALLOWED = 2

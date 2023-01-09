@@ -1,6 +1,6 @@
 from pony.orm import db_session, select
-from core.history import Gif, GifHosts, OldGif
-from core.gif import GifHostManager
+from gifreversingbot.core.history import Gif, GifHosts, OldGif
+from gifreversingbot.core.gif import GifHostManager
 
 ghm = GifHostManager()
 

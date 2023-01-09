@@ -1,8 +1,8 @@
 import unittest
 import praw
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.gif import GifHostManager
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.gif import GifHostManager
 
 """These tests rely on comments on in my test subreddit so they'll need some work for other people to use"""
 

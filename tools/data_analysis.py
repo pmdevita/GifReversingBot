@@ -1,9 +1,6 @@
 import praw
-import psaw
-import datetime
-import pony
-from core.credentials import CredentialsLoader
-from core import constants as consts
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
 
 credentials = CredentialsLoader().get_credentials()
 

@@ -1,10 +1,10 @@
 import praw.exceptions
 import prawcore.exceptions
-from core import constants as consts
-from core.context import CommentContext
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.context import CommentContext
 # from core.gif import Gif as GifObject
-from core.hosts import Gif as NewGifObject
-from core.operator import Operator
+from gifreversingbot.core.hosts import Gif as NewGifObject
+from gifreversingbot.core.operator import Operator
 from random import randrange
 from datetime import datetime
 # from core.credentials import CredentialsLoader

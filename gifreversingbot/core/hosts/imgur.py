@@ -5,14 +5,12 @@ import requests
 import json
 import re
 from io import BytesIO
-from pprint import pprint
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
-from core.credentials import CredentialsLoader
-from core import constants as consts
-from core.hosts import GifHost, Gif, GifFile, NO_NSFW, UploadFailed, CannotUpload
-from core.regex import REPatterns
-from core.file import get_duration, is_valid
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import UploadFailed, GifFile, Gif, GifHost
+from gifreversingbot.core.file import get_duration, is_valid
 
 
 class InvalidRefreshToken(Exception):
@@ -21,8 +19,9 @@ class InvalidRefreshToken(Exception):
 
 
 class ImgurFailedRequest(Exception):
-    def __init__(self):
-        super(ImgurFailedRequest, self).__init__("Something went wrong with the request")
+    def __init__(self, message=None):
+        message = "Something went wrong with the request" if not message else message
+        super(ImgurFailedRequest, self).__init__(message)
 
 
 class ImgurClient:
@@ -104,7 +103,7 @@ class ImgurClient:
         headers = {'Authorization': "Client-ID " + self.client_id}
         r = requests.get(self.API_BASE + url, headers=headers, params=params)
         if r.status_code != 200:
-            raise ImgurFailedRequest
+            raise ImgurFailedRequest(r.text)
         return r
 
     def post_request(self, url, data, headers=None, params=None):
@@ -182,7 +181,10 @@ class ImgurClient:
             m = MultipartEncoder(fields=data)
             r = s.post(self.API_BASE + api, headers={'Content-Type': m.content_type}, data=m, params=params)
         # pprint(r.json())
-        j = r.json()
+        try:
+            j = r.json()
+        except json.decoder.JSONDecodeError as e:
+            raise ImgurFailedRequest(r.text)
         if not j['data'].get('id', False):
             print(j)
             if j['data'].get('error', False):
@@ -265,7 +267,6 @@ class ImgurGif(Gif):
         return True
 
 
-
 class ImgurHost(GifHost):
     name = "Imgur"
     regex = re.compile("http(?:s)?://(?:\w+?\.)?imgur.com/(a/)?(gallery/)?(?(1)(?P<album_id>[a-zA-Z0-9]{5,7})|(?(2)("
@@ -285,7 +286,7 @@ class ImgurHost(GifHost):
 
 if __name__ == '__main__':
     client = ImgurClient()
-    with open("../../temp.mp4", 'rb') as f:
+    with open("../../../temp.mp4", 'rb') as f:
         results = client.upload_image(f, consts.MP4, False, False)
         print(results)
 

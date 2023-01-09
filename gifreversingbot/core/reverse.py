@@ -1,11 +1,8 @@
 import subprocess
 import os
-import json
 import platform
-from core import constants as consts
-from core.file import get_fps
-from core.hosts import GifFile
-from core.operator import Operator
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import GifFile
 
 
 def zeros(number, num_zeros=6):
@@ -74,7 +71,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
 
 
     # Reverse filenames
-    for i in os.walk("."):
+    for i in os.walk("../../core"):
         files = i[2]
         break
 
@@ -84,7 +81,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
         counter -= 1
 
     # Statistics
-    for i in os.walk("."):
+    for i in os.walk("../../core"):
         files = i[2]
         break
 
@@ -122,7 +119,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
         ).communicate()
 
 
-    os.chdir("..")
+    os.chdir("../..")
 
     # More statistics
     gif_size = os.path.getsize("temp.gif")

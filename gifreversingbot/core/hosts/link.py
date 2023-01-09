@@ -3,9 +3,8 @@ import time
 import re
 from io import BytesIO
 
-from core.hosts import GifHost, Gif, GifFile, get_response_size
-from core.regex import REPatterns
-from core import constants as consts
+from gifreversingbot.core.hosts import GifFile, Gif, GifHost, get_response_size
+from gifreversingbot.core import constants as consts
 
 
 class LinkGif(Gif):

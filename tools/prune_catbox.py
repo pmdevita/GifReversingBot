@@ -5,11 +5,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 import praw
 import datetime
-from pprint import pprint
-from core import constants as consts
-from core.credentials import CredentialsLoader
-from core.gif import GifHostManager
-from core.history import check_database, add_to_database, delete_from_database, list_by_oldest_access
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.credentials import CredentialsLoader
+from gifreversingbot.core.gif import GifHostManager
+from gifreversingbot.core.history import delete_from_database, list_by_oldest_access
 
 CUTOFF = datetime.date.today() - datetime.timedelta(weeks=9*4)
 

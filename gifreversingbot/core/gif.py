@@ -3,12 +3,8 @@ from operator import itemgetter
 
 import os
 import importlib
-from core import constants as consts
-from core.hosts import GifHost, GifFile, ONLY_NSFW, NSFW_ALLOWED, NO_NSFW
-from core.hosts import Gif as NewGif
-from core.regex import REPatterns
-
-
+from gifreversingbot.core import constants as consts
+from gifreversingbot.core.hosts import NO_NSFW, ONLY_NSFW, GifFile, Gif as NewGif, GifHost
 
 
 class GifHostManager:
@@ -25,7 +21,7 @@ class GifHostManager:
             for f in files:
                 #  __init__.py or __pycache__
                 if f[:2] != "__" and f[-3:] == ".py":
-                    i = importlib.import_module("." + f[:-3], 'core.hosts')
+                    i = importlib.import_module("." + f[:-3], 'gifreversingbot.core.hosts')
             hosts = []
             for host in self._get_all_subclasses(GifHost):
                 host.ghm = self
