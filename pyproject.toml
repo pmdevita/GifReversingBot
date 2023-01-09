@@ -21,3 +21,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 gifreversingbot = 'gifreversingbot.__main__:main'
+grb-prune-catbox = 'gifreversingbot.tools.prune_catbox:main'
