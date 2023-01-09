@@ -29,7 +29,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
         gifski = 'gifski'
 
     print("Reversing gif...")
-    with TempFolder("grbreverse") as temp_folder:
+    with TempFolder("grb-reverse") as temp_folder:
         filename = temp_folder / ("in." + format)
 
         with open(filename, "wb") as f:
