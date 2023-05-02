@@ -1,3 +1,6 @@
+import re
+import time
+
 import praw.exceptions
 import prawcore.exceptions
 from gifreversingbot.core import constants as consts
@@ -54,7 +57,11 @@ def reply(context: CommentContext, gif):
         print("Successfully reversed and replied!")
     except praw.exceptions.APIException as e:
         if e.error_type == "RATELIMIT":
+            timeout = re.findall("(\d+) minute", e.message)
             print(e.message)
+            if timeout:
+                time.sleep(int(timeout[0]) + 1)
+                return reply_message(context, gif)
             return False
         elif e.error_type == "THREAD_LOCKED":
             reply_message(comment, url)
