@@ -30,7 +30,7 @@ class Operator:
             pretty_data = json.dumps(cls.data, indent=4).replace("\n", "\n    ")
         else:
             pretty_data = "No Data"
-        cls.message(f"{message}\n\n---\n\nRequest Data:\n\n    {pretty_data}", subject, False, always_message)
+        cls.message(f"{message}\n\n---\n\nRequest Data:\n\n    {pretty_data}"[:1000], subject, False, always_message)
         if print_message:
             print(message)
 
