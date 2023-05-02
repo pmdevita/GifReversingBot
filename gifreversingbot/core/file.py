@@ -21,10 +21,18 @@ class MediaInfo:
 
         self.temp_download = False
         self.data = self.get_data(filestream, file_type)
-        self.video = self.get_video_stream(self.data['streams'])
-        self.audio = self.get_audio_stream(self.data['streams'])
-        # If it's a gif, we need to save it to the drive first
-        if self.video['codec_name'] == 'gif' and file_type == FILESTREAM_TYPE:
+
+        # If we didn't get any data back, we probably need to push it to the file system
+        if len(self.data.keys()) == 0:
+            self.temp_download = True
+        else:
+            self.video = self.get_video_stream(self.data['streams'])
+            self.audio = self.get_audio_stream(self.data['streams'])
+            # If it's a gif, we need to save it to the drive first to get all of its data
+            if self.video['codec_name'] == 'gif' and file_type == FILESTREAM_TYPE:
+                self.temp_download = True
+
+        if self.temp_download:
             self.temp_download = "mediainfo.gif"
             with open(self.temp_download, 'wb') as f:
                 filestream.seek(0)
