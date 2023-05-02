@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "gifreversingbot"
-version = "3.4.0"
+version = "3.4.1"
 description = "A Reddit bot that reverses gifs"
 authors = ["Peter DeVita <mewtwo2643@yahoo.com>"]
 license = "GPL"
-readme = "README.md"
+readme = "Readme.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"

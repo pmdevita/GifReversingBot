@@ -170,7 +170,7 @@ class ImgurClient:
             m = MultipartEncoder(fields=data)
             r = self.post_request(api, m, {'Content-Type': m.content_type})
         # We get around the image file size restriction by using a client ID made by a browser
-        # Luckily the API is similarish (rather than last time where it wasn't and also 3 steps)
+        # Luckily the API is similarish (rather than last time when it wasn't and also 3 steps)
         elif media_type == consts.GIF:
             s = requests.Session()
             api = self.IMAGE_UPLOAD
@@ -276,6 +276,7 @@ class ImgurHost(GifHost):
     vid_len_limit = 60
     vid_size_limit = 200
     gif_size_limit = 201
+    audio = True
 
     @classmethod
     def upload(cls, file, gif_type, nsfw, audio=False):
@@ -287,7 +288,7 @@ class ImgurHost(GifHost):
 if __name__ == '__main__':
     client = ImgurClient()
     with open("../../temp.mp4", 'rb') as f:
-        results = client.upload_image(f, consts.MP4, False, False)
+        results = client.upload_image(f, consts.MP4, False, True)
         print(results)
 
 

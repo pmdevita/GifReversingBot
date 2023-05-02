@@ -6,7 +6,13 @@ import importlib
 import praw
 from gifreversingbot.core import constants as consts
 from gifreversingbot.hosts import NO_NSFW, ONLY_NSFW, GifFile, Gif as NewGif, GifHost
+from gifreversingbot.core.credentials import CredentialsLoader
 
+def get_config_list(string):
+    if string:
+        return [i.strip() for i in string.split(",")]
+    else:
+        return []
 
 class GifHostManager:
     hosts = []
@@ -17,6 +23,10 @@ class GifHostManager:
 
     def __init__(self, reddit=None):
         if not self.hosts:
+            # Get excluded hosts
+            excluded_hosts = get_config_list(CredentialsLoader.get_credentials()["general"].get("exclude_hosts", ""))
+            disable_upload = get_config_list(CredentialsLoader.get_credentials()["general"].get("disable_upload", ""))
+
             # Dynamically load gif hosts
             files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../hosts"))
             for f in files:
@@ -26,7 +36,11 @@ class GifHostManager:
             hosts = []
             for host in self._get_all_subclasses(GifHost):
                 host.ghm = self
-                hosts.append([host, host.priority])
+                if host.name not in excluded_hosts:
+                    if host.name in disable_upload:
+                        host.can_gif = False
+                        host.can_vid = False
+                    hosts.append([host, host.priority])
             GifHostManager.hosts = [i[0] for i in sorted(hosts, key=itemgetter(1))]
             # Create the priority lists
             # vid_priority = [[i, i.vid_len_limit] for i in self.hosts if i.can_vid]
