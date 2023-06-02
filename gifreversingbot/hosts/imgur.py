@@ -188,7 +188,12 @@ class ImgurClient:
         if not j['data'].get('id', False):
             print(j)
             if j['data'].get('error', False):
-                print("Error:", j['data']['error'])
+                error = j["data"]["error"]
+                print("Error:", error)
+                if "You are uploading too fast" in error["message"]:
+                    timeout = re.findall("(\d+) more minute", error["message"])
+                    if timeout:
+                        time.sleep((int(timeout[0]) + 1) * 60)
                 return None
         return j['data']['id']
 
