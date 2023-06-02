@@ -20,7 +20,7 @@ class Operator:
     @classmethod
     def message(cls, message, subject="Notification", print_message=True, always_message=False):
         if not cls.testing or always_message:
-            cls.user.message(consts.short_name + " - " + subject, message)
+            cls.user.message(consts.short_name + " - " + subject, message[:10000])
         if print_message:
             print(message)
 
