@@ -3,6 +3,7 @@ import os
 import json
 import platform
 from io import BytesIO
+from random import randint
 from gifreversingbot.utils.temp_folder import TempFolder
 
 if platform.system() == 'Windows':
@@ -25,20 +26,21 @@ def concat(video, audio):
 
     print("Combining video and audio...")
 
-    with TempFolder("grbconcat") as temp_folder:
+    with TempFolder(f"grbconcat-{randint(0, 1000)}") as temp_folder:
         with open(temp_folder / "video.mp4", "wb") as f:
             f.write(video.read())
 
         with open(temp_folder / "audio.mp4", "wb") as f:
             f.write(audio.read())
 
+        out_file = temp_folder / "temp.mp4"
         subprocess.Popen(
             [ffmpeg, "-loglevel", "panic", "-i", temp_folder / "video.mp4", "-i", temp_folder / "audio.mp4",
-             "-c:v", "copy", "-c:a", "copy", "-y", "temp.mp4"]
+             "-c:v", "copy", "-c:a", "copy", "-y", out_file]
         ).communicate()
 
-    with open("temp.mp4", "rb") as f:
-        file = BytesIO(f.read())
+        with open(out_file, "rb") as f:
+            file = BytesIO(f.read())
     return file
 
 
@@ -58,7 +60,7 @@ def vid_to_gif(image, path=False):
         gifski = 'gifski'
 
     print("Reversing gif...")
-    with TempFolder("grb-vidgif") as temp_folder:
+    with TempFolder(f"grb-vidgif-{randint(0, 1000)}") as temp_folder:
 
         with open(temp_folder / "in.mp4", "wb") as f:
             f.write(image.read())
