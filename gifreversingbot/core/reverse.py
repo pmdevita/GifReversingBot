@@ -1,6 +1,8 @@
 import subprocess
 import os
 import platform
+from pathlib import Path
+
 from gifreversingbot.core import constants as consts
 from gifreversingbot.hosts import GifFile
 from gifreversingbot.utils.temp_folder import TempFolder
@@ -11,7 +13,7 @@ def zeros(number, num_zeros=6):
     return "".join(["0" for i in range(num_zeros - len(string))]) + string
 
 
-def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
+def reverse_gif(image_file: GifFile, folder: Path, path=False, format=consts.GIF):
     """
     :param image: filestream to reverse
     :param path: if you just want the string path to the file instead of the filestream
@@ -29,59 +31,66 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
         gifski = 'gifski'
 
     print("Reversing gif...")
-    with TempFolder("grb-reverse") as temp_folder:
-        filename = temp_folder / ("in." + format)
 
-        with open(filename, "wb") as f:
-            f.write(image.read())
+    frames_folder = folder / "frames"
+    frames_folder.mkdir()
 
-        fps = image_file.info.fps
-        print("FPS:", fps)
+    filename = folder / ("in." + format)
 
-        print("Exporting frames...")
+    with open(filename, "wb") as f:
+        f.write(image.read())
 
-        # Reverse filenames
-        subprocess.Popen(
-            [ffmpeg, "-loglevel", "quiet", "-i", str(filename), "-vsync", "0", temp_folder / "original%06d.png"]
-        ).communicate()
+    fps = image_file.info.fps
+    print("FPS:", fps)
 
-        os.remove(filename)
+    print("Exporting frames...")
 
-        # Reverse filenames
-        for i in os.walk(temp_folder):
-            files = i[2]
-            break
+    # Reverse filenames
+    subprocess.Popen(
+        [ffmpeg, "-loglevel", "quiet", "-i", str(filename), "-vsync", "0", frames_folder / "original%06d.png"]
+    ).communicate()
 
-        counter = len(files)
-        for i in range(1, len(files) + 1):
-            os.rename(temp_folder / "original{}.png".format(zeros(i)),
-                      temp_folder / "frame{}.png".format(zeros(counter)))
-            counter -= 1
+    os.remove(filename)
 
-        # Statistics
-        for i in os.walk(temp_folder):
-            files = i[2]
-            break
+    # Reverse filenames
+    for i in os.walk(frames_folder):
+        files = i[2]
+        break
 
-        pics_size = sum(os.path.getsize(temp_folder / f) for f in files)
-        print(pics_size)
+    counter = len(files)
+    for i in range(1, len(files) + 1):
+        os.rename(frames_folder / "original{}.png".format(zeros(i)),
+                  frames_folder / "frame{}.png".format(zeros(counter)))
+        counter -= 1
 
-        print("Rebuilding gif...")
+    # Statistics
+    for i in os.walk(frames_folder):
+        files = i[2]
+        break
 
-        if platform.system() == 'Windows':
-            p = subprocess.Popen(
-                [gifski, "-o", "temp.gif", "--fps", str(max(round(fps), 1)), temp_folder / "frame*.png"],
-                shell=True
-            )
-        else:
-            p = subprocess.Popen(
-                [f"{gifski} -o temp.gif --fps {str(max(round(fps), 1))} {temp_folder / 'frame*.png'}"],
-                shell=True
-            )
+    pics_size = sum(os.path.getsize(frames_folder / f) for f in files)
+    print(pics_size)
 
-        p.communicate()
+    print("Rebuilding gif...")
 
-        print("done")
+    if platform.system() == 'Windows':
+        p = subprocess.Popen(
+            [gifski, "-o", str(folder / "temp.gif"), "--fps", str(max(round(fps), 1)), str(frames_folder / "frame*.png")],
+            shell=True,
+            stderr=subprocess.PIPE
+        )
+    else:
+        p = subprocess.Popen(
+            [f"{gifski} -o {folder / 'temp.gif'} --fps {str(max(round(fps), 1))} {frames_folder / 'frame*.png'}"],
+            shell=True,
+            stderr=subprocess.PIPE
+        )
+
+    output = p.communicate()
+
+    print(output)
+
+    print("done")
 
     # More statistics
     gif_size = os.path.getsize("temp.gif")
@@ -93,7 +102,7 @@ def reverse_gif(image_file: GifFile, path=False, format=consts.GIF):
         return open("temp.gif", "rb")
 
 
-def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
+def reverse_mp4(mp4, folder: Path, audio=False, format=consts.MP4, output=consts.MP4):
     """
     :param mp4: filestream to reverse (must be a mp4)
     :return: filestream of an mp4
@@ -114,9 +123,10 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
     if audio:
         params['audio'] = "-af areverse "
 
-    # Assemble command
+    params['output_file'] = folder / f"temp.{output}"
 
-    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio}-y temp.{output}".format(output=output,
+    # Assemble command
+    command = "ffmpeg -loglevel {loglevel} -i pipe:0 -vf reverse {codec} {audio}-y {output_file}".format(output=output,
                                                                                                          **params)
 
     # command = "ffmpeg -loglevel {loglevel} -i pipe:0 -y temp.{output}".format(output=output, **params)
@@ -142,7 +152,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
         """"frame=    0 fps=0.0 q=0.0 size=       1kB time=00:00:00.00 bitrate=N/A"""
         """"frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00"""
         print("FFMPEG gave weird error, putting in file to reverse")
-        in_file = "source." + format
+        in_file = folder / ("source." + format)
         command[4] = in_file
         mp4.seek(0)
         with open(in_file, 'wb') as f:
@@ -187,7 +197,7 @@ def reverse_mp4(mp4, audio=False, format=consts.MP4, output=consts.MP4):
 
         os.remove(in_file)
 
-    if os.path.getsize('temp.' + output) <= (48 if output == consts.MP4 else 632):
-        return [os.path.getsize('temp.' + output), output]
+    if os.path.getsize(params['output_file']) <= (48 if output == consts.MP4 else 632):
+        return [os.path.getsize(params['output_file']), output]
     else:
-        return open("temp." + output, "rb")
+        return open(params['output_file'], "rb")

@@ -19,9 +19,11 @@ class InvalidRefreshToken(Exception):
 
 
 class ImgurFailedRequest(Exception):
-    def __init__(self, message=None):
-        message = "Something went wrong with the request" if not message else message
-        super(ImgurFailedRequest, self).__init__(message)
+    def __init__(self, message=None, status_code=None, errors=None):
+        self.message = "Something went wrong with the request" if not message else message
+        self.status_code = status_code
+        self.errors = None
+        super(ImgurFailedRequest, self).__init__(self.message)
 
 
 class ImgurClient:
@@ -103,7 +105,11 @@ class ImgurClient:
         headers = {'Authorization': "Client-ID " + self.client_id}
         r = requests.get(self.API_BASE + url, headers=headers, params=params)
         if r.status_code != 200:
-            raise ImgurFailedRequest(r.text)
+            try:
+                errors = r.json()
+            except Exception:
+                errors = r.text
+            raise ImgurFailedRequest(message=errors, status_code=r.status_code, errors=errors)
         return r
 
     def post_request(self, url, data, headers=None, params=None):
@@ -120,7 +126,11 @@ class ImgurClient:
         if r.status_code != 200:
             print(self.API_BASE + url, full_headers, data, params)
             print(r, r.content)
-            raise ImgurFailedRequest
+            try:
+                errors = r.json()
+            except Exception:
+                errors = r.text
+            raise ImgurFailedRequest(status_code=r.status_code, errors=errors)
         return r
 
     def options_request(self, url, headers=None):
@@ -168,7 +178,13 @@ class ImgurClient:
             data['name'] = "video." + media_type
             api = self.UPLOAD
             m = MultipartEncoder(fields=data)
-            r = self.post_request(api, m, {'Content-Type': m.content_type})
+            try:
+                r = self.post_request(api, m, {'Content-Type': m.content_type})
+            except ImgurFailedRequest as e:
+                if e.status_code == 429:
+                    print(e)
+                    print("Waiting for Imgur cooldown...")
+                    time.sleep(600)
         # We get around the image file size restriction by using a client ID made by a browser
         # Luckily the API is similarish (rather than last time when it wasn't and also 3 steps)
         elif media_type == consts.GIF:

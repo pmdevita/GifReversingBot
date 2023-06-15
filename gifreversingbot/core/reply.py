@@ -57,10 +57,10 @@ def reply(context: CommentContext, gif):
         print("Successfully reversed and replied!")
     except praw.exceptions.APIException as e:
         if e.error_type == "RATELIMIT":
-            timeout = re.findall("(\d+) minute", e.message)
+            timeout = re.findall("((\d+) minute|(\d+) second)", e.message)
             print(e.message)
             if timeout:
-                time.sleep((int(timeout[0]) + 1) * 60)
+                time.sleep((int(timeout[0][0]) + 1) * 60 + int(timeout[0][1]))
                 return reply(context, gif)
             return False
         elif e.error_type == "THREAD_LOCKED":

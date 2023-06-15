@@ -32,13 +32,16 @@ class TempFolder:
             name = consts.bot_name + "temp"
         self.name = name
         self.folder = _OSTempLocation.temp_location() / self.name
-
-    def __enter__(self) -> Path:
         if self.folder.exists():
             print("Deleting existing temp folder...")
             shutil.rmtree(self.folder)
         os.mkdir(self.folder)
+
+    def __enter__(self) -> Path:
         return self.folder
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
         shutil.rmtree(self.folder)
