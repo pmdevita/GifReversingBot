@@ -176,19 +176,23 @@ def process_comment(reddit, comment=None, queue=None, original_context=None):
                                                        original_gif.nsfw, reversed_gif_file.audio)
                 # If the host simply cannot accept this file at all
                 if result == CannotUpload:
+                    reversed_gif_file.close()
                     cant_upload = True
                     break
                 # If the host was unable to accept the gif at this time
                 elif result == UploadFailed:
+                    reversed_gif_file.close()
                     cant_upload = False
                     continue  # Try again?
                 # No error and not None, success!
                 elif result:
                     uploaded_gif = result
+                    reversed_gif_file.close()
                     break
 
             # If we have the uploaded gif, break out and continue
             if uploaded_gif:
+                reversed_gif_file.close()
                 break
 
     # If there was an error, return it
