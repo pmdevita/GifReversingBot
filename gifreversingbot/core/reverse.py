@@ -93,13 +93,13 @@ def reverse_gif(image_file: GifFile, folder: Path, path=False, format=consts.GIF
     print("done")
 
     # More statistics
-    gif_size = os.path.getsize("temp.gif")
+    gif_size = os.path.getsize(folder / "temp.gif")
     print("pngs size, gif size, ratio", pics_size / 1000000, gif_size / 1000000, gif_size / pics_size)
 
     if path:
         return "temp.gif"
     else:
-        return open("temp.gif", "rb")
+        return open(folder / "temp.gif", "rb")
 
 
 def reverse_mp4(mp4, folder: Path, audio=False, format=consts.MP4, output=consts.MP4):
