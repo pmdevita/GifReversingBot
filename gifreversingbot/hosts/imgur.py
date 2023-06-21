@@ -185,6 +185,7 @@ class ImgurClient:
                     print(e)
                     print("Waiting for Imgur cooldown...")
                     time.sleep(600)
+                    return None
         # We get around the image file size restriction by using a client ID made by a browser
         # Luckily the API is similarish (rather than last time when it wasn't and also 3 steps)
         elif media_type == consts.GIF:
